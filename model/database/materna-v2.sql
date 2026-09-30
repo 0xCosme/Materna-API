@@ -91,25 +91,7 @@ create table tbl_doadora(
 #FUNCIONARIO
 ######################################################################################################################
 
-#CRIAÇÃO DA TABELA funcionario
-create table tbl_funcionario(
-	id 			        int                     not null primary key auto_increment,
-    nome 		        varchar (100)           not null,
-    cpf 		        varchar (15)            not null,
-    data_nascimento 	date                    not null,
-    email            	varchar(255)            not null,
-    adm                 boolean                 not null,
-    senha               varchar(255)            not null,
-    sal                 varchar(255)            not null,
 
-    id_telefone         int                     not null,
-
-    #fazer relacao entre duas tabelas 
-    constraint			FK_TELEFONE_FUNCIONARIO	          # nome do relacionamento
-    foreign key			(id_telefone)				      # quem sera a FK natabla FK(foren key)
-    references			tbl_telefone(id)
-
-);
 
 
 
@@ -186,6 +168,35 @@ create table tbl_telefone_instituicao(
 
 ); 
 
+##########################################################################################################################################
+#CRIAÇÃO DA TABELA funcionario
+create table tbl_funcionario(
+	id 			        int                     not null primary key auto_increment,
+    nome 		        varchar (100)           not null,
+    cpf 		        varchar (15)            not null,
+    data_nascimento 	date                    not null,
+    email            	varchar(255)            not null,
+    adm                 boolean                 not null,
+    senha               varchar(255)            not null,
+    sal                 varchar(255)            not null,
+
+    id_telefone         int                     not null,
+    id_instituicao      int                     not null,
+
+    #fazer relacao entre duas tabelas 
+    constraint			FK_TELEFONE_FUNCIONARIO	          # nome do relacionamento
+    foreign key			(id_telefone)				      # quem sera a FK natabla FK(foren key)
+    references			tbl_telefone(id),                 # de onde vem a FK
+
+
+
+    #fazer relacao entre duas tabelas 
+    constraint          FK_INSTITUICAO_FUNCIONARIO    # nome do relacionamento
+    foreign key         (id_instituicao)              # quem sera a FK na tabela
+    references          tbl_instituicao(id)           # de onde vem a FK
+
+);
+
 #############################################################################################################################
 
 #CRIAÇÃO DA TABELA campanha
@@ -235,18 +246,20 @@ create table tbl_jornada(
 );
 
 
+
+
 #CRIAÇÃO DA TABELA etapa
 create table tbl_etapa(
 	id 			            int                     not null primary key auto_increment,
     titulo 		            varchar(100)            not null,
     descricao               text                    not null,
-
+    ordem   
+                    int             not null,                -- posição na jornada
+    is_repetivel            boolean         not null default false,  -- true na última etapa
     is_agendavel            boolean                 not null,
     is_obrigatorio          boolean                 not null,
     is_solicita_arquivo     boolean                 not null,
     is_precisa_aprovacao    boolean                 not null,
-    material_instituicao    varchar(255)                 ,
-    
 
     id_jornada              int                     not null,
 
@@ -259,12 +272,12 @@ create table tbl_etapa(
 );
 
 
+
 #CRIAÇÃO DA TABELA ciclo
 create table tbl_ciclo(
 	id 			          int                      not null primary key auto_increment,
-    titulo 		          varchar(100)             not null,
     numero_ciclo          int                      not null,
-    is_cocluido	          boolean                  not null,
+    is_concluido	      boolean                  not null,
 
     id_jornada            int                      not null,
     id_doadora            int                      not null,
@@ -286,11 +299,8 @@ create table tbl_ciclo(
 #CRIAÇÃO DA TABELA etapa ciclo
 create table tbl_etapa_ciclo(
 	id 			        int                     not null primary key auto_increment,
-    data_conclusao 		date                    not null,
+    data_conclusao 		date                    null,
     
-
-    
-
     id_etapa            int                     not null,
     id_ciclo            int                     not null,
 
@@ -330,7 +340,7 @@ create table tbl_cadastro_horario(
 #CRIAÇÃO DA TABELA statu agendamento
 create table tbl_status_agendamento(
 	id 			    int                     not null primary key auto_increment,
-    statu 		    varchar (25)            not null
+    status 		    varchar (25)            not null
 );
 
 
@@ -339,9 +349,10 @@ create table tbl_agendamento(
 	id 			    int                     not null primary key auto_increment,
   
     
-	id_ciclo  						 int                     not null,
+	id_ciclo  						  int                     not null,
     id_cadastro_horario				  int                     not null,
     id_status_agendamento			  int                     not null,
+
 
 
 	#fazer relacao entre duas tabelas 
@@ -369,7 +380,7 @@ create table tbl_documento_instituicao(
 	id 			    int                     not null primary key auto_increment,
     documento		varchar(255)            not null,
 
-    id_etapa  int                           not null,
+    id_etapa        int                     not null,
 
     #fazer relacao entre duas tabelas 
     constraint			FK_ETAPA_DOCUMENTOINSTITUICAO       # nome do relacionamento
@@ -382,12 +393,12 @@ create table tbl_documento_instituicao(
 
 #CRIAÇÃO DA TABELA documento doadora
 create table tbl_documento_doadora(
-	id 			    int                     not null primary key auto_increment,
-    documento		varchar(255)             not null,
-    motivo_recusa		varchar(255)             not null,
+	id 			            int                     not null primary key auto_increment,
+    documento		        varchar(255)             not null,
+    motivo_recusa		    varchar(255)             not null,
     
-    id_etapa_ciclo  int                     not null,
-    id_doadora  int                     not null,
+    id_etapa_ciclo          int                     not null,
+    id_doadora              int                     not null,
 
 
 
