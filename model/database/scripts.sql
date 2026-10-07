@@ -44,3 +44,6 @@ WHERE d.id = 1
 ORDER BY
     c.numero_ciclo,
     e.ordem;
+
+
+
