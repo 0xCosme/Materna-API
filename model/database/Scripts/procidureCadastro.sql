@@ -121,8 +121,10 @@ CALL proccadastrardoadora(
 
 
 #########################################################################################################
-# CADASTRA INSTITUICAO (com endereço, telefone e 7 dias de horário de funcionamento)
+# CADASTRA INSTITUICAO (com endereço, telefone e 7 dias de horário de funcionamento e funconario)
 #########################################################################################################
+
+DROP PROCEDURE IF EXISTS proccadastrarinstituicao;
 
 DELIMITER $$
 
@@ -134,7 +136,7 @@ CREATE PROCEDURE proccadastrarinstituicao (
     IN p_foto             VARCHAR(255),
     IN p_id_coleta        INT,
 
-    # Telefone
+    # Telefone da instituição
     IN p_telefone         VARCHAR(25),
 
     # Endereço
@@ -150,31 +152,35 @@ CREATE PROCEDURE proccadastrarinstituicao (
     IN p_cidade           VARCHAR(100),
     IN p_sigla_estado     VARCHAR(3),
 
-    # Horário de funcionamento (1 = Domingo, 2 = Segunda ... 7 = Sábado)
-    IN p_hora_inicio_dom  TIME,
-    IN p_hora_fim_dom     TIME,
-    IN p_hora_inicio_seg  TIME,
-    IN p_hora_fim_seg     TIME,
-    IN p_hora_inicio_ter  TIME,
-    IN p_hora_fim_ter     TIME,
-    IN p_hora_inicio_qua  TIME,
-    IN p_hora_fim_qua     TIME,
-    IN p_hora_inicio_qui  TIME,
-    IN p_hora_fim_qui     TIME,
-    IN p_hora_inicio_sex  TIME,
-    IN p_hora_fim_sex     TIME,
-    IN p_hora_inicio_sab  TIME,
-    IN p_hora_fim_sab     TIME,
+    # Horário de funcionamento: dia + abre + fecha (7 dias)
+    IN p_dia1 INT, IN p_abre1 TIME, IN p_fecha1 TIME,
+    IN p_dia2 INT, IN p_abre2 TIME, IN p_fecha2 TIME,
+    IN p_dia3 INT, IN p_abre3 TIME, IN p_fecha3 TIME,
+    IN p_dia4 INT, IN p_abre4 TIME, IN p_fecha4 TIME,
+    IN p_dia5 INT, IN p_abre5 TIME, IN p_fecha5 TIME,
+    IN p_dia6 INT, IN p_abre6 TIME, IN p_fecha6 TIME,
+    IN p_dia7 INT, IN p_abre7 TIME, IN p_fecha7 TIME,
+
+    # Funcionário
+    IN p_func_nome             VARCHAR(100),
+    IN p_func_cpf              VARCHAR(15),
+    IN p_func_data_nascimento  DATE,
+    IN p_func_email            VARCHAR(255),
+    IN p_func_senha            VARCHAR(255),
+    IN p_func_sal              VARCHAR(255),
+    IN p_func_telefone         VARCHAR(25),
 
     # Retorno
-    OUT p_id_instituicao  INT
+    OUT p_id_instituicao  INT,
+    OUT p_id_funcionario  INT
 )
 BEGIN
-    DECLARE v_id_estado       INT;
-    DECLARE v_id_cidade       INT;
-    DECLARE v_id_endereco     INT;
-    DECLARE v_id_telefone     INT;
-    DECLARE v_id_instituicao  INT;
+    DECLARE v_id_estado             INT;
+    DECLARE v_id_cidade             INT;
+    DECLARE v_id_endereco           INT;
+    DECLARE v_id_telefone           INT;
+    DECLARE v_id_instituicao        INT;
+    DECLARE v_id_telefone_func      INT;
 
     # Se qualquer erro acontecer, desfaz tudo
     DECLARE EXIT HANDLER FOR SQLEXCEPTION
@@ -223,7 +229,7 @@ BEGIN
         (p_nome, p_cnpj, p_email, p_foto, p_id_coleta, v_id_endereco);
     SET v_id_instituicao = LAST_INSERT_ID();
 
-    # TELEFONE
+    # TELEFONE DA INSTITUIÇÃO
     INSERT INTO tbl_telefone (numero) VALUES (p_telefone);
     SET v_id_telefone = LAST_INSERT_ID();
 
@@ -231,17 +237,29 @@ BEGIN
     INSERT INTO tbl_telefone_instituicao (id_instituicao, id_telefone)
     VALUES (v_id_instituicao, v_id_telefone);
 
-    # HORÁRIO DE FUNCIONAMENTO: 7 dias
+    # HORÁRIO DE FUNCIONAMENTO: grava em tbl_horario_funcionamento (7 linhas)
     INSERT INTO tbl_horario_funcionamento
         (dia, hora_inicio, hora_fim, id_instituicao)
     VALUES
-        (1, p_hora_inicio_dom, p_hora_fim_dom, v_id_instituicao),
-        (2, p_hora_inicio_seg, p_hora_fim_seg, v_id_instituicao),
-        (3, p_hora_inicio_ter, p_hora_fim_ter, v_id_instituicao),
-        (4, p_hora_inicio_qua, p_hora_fim_qua, v_id_instituicao),
-        (5, p_hora_inicio_qui, p_hora_fim_qui, v_id_instituicao),
-        (6, p_hora_inicio_sex, p_hora_fim_sex, v_id_instituicao),
-        (7, p_hora_inicio_sab, p_hora_fim_sab, v_id_instituicao);
+        (p_dia1, p_abre1, p_fecha1, v_id_instituicao),
+        (p_dia2, p_abre2, p_fecha2, v_id_instituicao),
+        (p_dia3, p_abre3, p_fecha3, v_id_instituicao),
+        (p_dia4, p_abre4, p_fecha4, v_id_instituicao),
+        (p_dia5, p_abre5, p_fecha5, v_id_instituicao),
+        (p_dia6, p_abre6, p_fecha6, v_id_instituicao),
+        (p_dia7, p_abre7, p_fecha7, v_id_instituicao);
+
+    # TELEFONE DO FUNCIONÁRIO
+    INSERT INTO tbl_telefone (numero) VALUES (p_func_telefone);
+    SET v_id_telefone_func = LAST_INSERT_ID();
+
+    # FUNCIONÁRIO (primeiro funcionário da instituição = administrador)
+    INSERT INTO tbl_funcionario
+        (nome, cpf, data_nascimento, email, adm, senha, sal, id_telefone, id_instituicao)
+    VALUES
+        (p_func_nome, p_func_cpf, p_func_data_nascimento, p_func_email, TRUE,
+         p_func_senha, p_func_sal, v_id_telefone_func, v_id_instituicao);
+    SET p_id_funcionario = LAST_INSERT_ID();
 
     SET p_id_instituicao = v_id_instituicao;
 
@@ -250,22 +268,24 @@ END$$
 
 DELIMITER ;
 
-
 CALL proccadastrarinstituicao(
-    'Banco de Leite Esperança', 
+    -- Instituição
+    'Banco de Leite Esperança',
     '12.345.678/0001-90', 
     'contato@esperanca.org', 
     'foto.jpg', 
     1,
     '(11) 99999-9999',
+    -- Endereço
     'Rua das Flores', 
-    '06000-000', 
-    'Centro', '100', 
-    'Sala 2', 
+    '06000-000', 'Centro', 
+    '100', 
+    'Sala 2',
     -23.55052000, 
     -46.63330800,
     'Osasco', 
     'SP',
+    -- Horários
     1, '00:00', '00:00',    -- domingo (fechado)
     2, '08:00', '17:00',    -- segunda
     3, '08:00', '17:00',    -- terça
@@ -273,8 +293,19 @@ CALL proccadastrarinstituicao(
     5, '08:00', '17:00',    -- quinta
     6, '08:00', '17:00',    -- sexta
     7, '08:00', '12:00',    -- sábado
-    
+    -- Funcionário
+    'Maria Souza', 
+    '123.456.789-00', 
+    '1990-05-20', 
+    'maria@esperanca.org',
+    'senha_hash_aqui', 
+    'sal_aleatorio_aqui', 
+    '(11) 98888-7777',
+    -- Retornos
+    @id_instituicao, @id_funcionario
 );
+
+SELECT @id_instituicao, @id_funcionario;
 
 #############################################################################################################
 
