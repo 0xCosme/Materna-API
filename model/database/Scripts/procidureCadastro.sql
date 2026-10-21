@@ -536,7 +536,7 @@ END$$
 DELIMITER ;
 
 
- como usar
+ ###como usar
 CALL sp_cadastrar_jornada(
     TRUE,                                   -- is_ativo
     'Jornada de Matrícula',                 -- nome
@@ -581,3 +581,85 @@ CALL sp_cadastrar_jornada(
 );
 
 SELECT @codigo;
+
+
+
+
+
+
+
+
+
+DELIMITER $$
+
+CREATE PROCEDURE proccadastrarhorario (
+    # Horário
+    IN p_dia       DATE,
+    IN p_horario   TIME,
+
+    # Etapa relacionada
+    IN p_id_etapa  INT,
+
+    # Retorno
+    OUT p_id_cadastro_horario INT
+)
+BEGIN
+    DECLARE v_is_agendavel BOOLEAN;
+    DECLARE v_etapa_existe INT DEFAULT 0;
+
+    # Se qualquer erro acontecer, desfaz tudo
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        RESIGNAL;
+    END;
+
+    START TRANSACTION;
+
+    # Verifica se a etapa existe
+    SELECT COUNT(*)
+    INTO v_etapa_existe
+    FROM tbl_etapa
+    WHERE id = p_id_etapa;
+
+    IF v_etapa_existe = 0 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Erro: a etapa informada nao existe.';
+    END IF;
+
+    # Verifica se a etapa permite agendamento
+    SELECT is_agendavel
+    INTO v_is_agendavel
+    FROM tbl_etapa
+    WHERE id = p_id_etapa;
+
+    IF v_is_agendavel <> TRUE THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Erro: esta etapa nao permite agendamento.';
+    END IF;
+
+    # Cadastra o horário se a etapa for agendável
+    INSERT INTO tbl_cadastro_horario (
+        dia,
+        horario,
+        id_etapa
+    )
+    VALUES (
+        p_dia,
+        p_horario,
+        p_id_etapa
+    );
+
+    SET p_id_cadastro_horario = LAST_INSERT_ID();
+
+    COMMIT;
+END$$
+
+DELIMITER ;
+
+CALL proccadastrarhorario(
+    '2026-11-10',       -- Dia do agendamento
+    '14:30:00',         -- Horário
+    1,                  -- ID da etapa
+    @id_cadastro_horario
+);
