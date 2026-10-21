@@ -214,9 +214,9 @@ create table tbl_campanha(
 );
 
 #####################################################################################################
-#####################################################
-#################################################
-########################################
+#tabela jornada
+#####################################################################################################
+
 #CRIAÇÃO DA TABELA jornada
 create table tbl_jornada(
 	id 			            int                         not null primary key auto_increment,
@@ -241,9 +241,9 @@ create table tbl_etapa(
 	id 			            int                     not null primary key auto_increment,
     titulo 		            varchar(100)            not null,
     descricao               text                    not null,
-    ordem   
-                    int             not null,                -- posição na jornada
-    is_repetivel            boolean         not null default false,  -- true na última etapa
+    ordem                   int                     not null, 
+    documento		        varchar(255),               -- posição na jornada
+    is_repetivel            boolean                 not null default false,  -- true na última etapa
     is_agendavel            boolean                 not null,
     is_obrigatorio          boolean                 not null,
     is_solicita_arquivo     boolean                 not null,
@@ -258,6 +258,9 @@ create table tbl_etapa(
     references			tbl_jornada(id)		      # de onde vem a FK
 
 );
+
+
+
 
 
 
@@ -363,19 +366,7 @@ create table tbl_agendamento(
 
 
 
-#CRIAÇÃO DA TABELA documento instituicao
-create table tbl_documento_instituicao(
-	id 			    int                     not null primary key auto_increment,
-    documento		varchar(255)            not null,
 
-    id_etapa        int                     not null,
-
-    #fazer relacao entre duas tabelas 
-    constraint			FK_ETAPA_DOCUMENTOINSTITUICAO       # nome do relacionamento
-    foreign key			(id_etapa)    		                # quem sera a FK natabla FK(foren key)
-    references			tbl_etapa(id)		                # de onde vem a FK
-
-);
 
 
 
@@ -888,7 +879,97 @@ DELIMITER ;
 
 
 
+DELIMITER $$
 
+CREATE PROCEDURE sp_cadastrar_jornada(
+    IN  p_is_ativo        BOOLEAN,
+    IN  p_nome            VARCHAR(50),
+    IN  p_descricao       TEXT,
+    IN  p_id_instituicao  INT,
+    IN  p_etapas          JSON,      -- array de etapas
+    OUT p_codigo          INT        -- 200 = sucesso | 400 = dados inválidos | 404 = instituição inexistente | 500 = erro
+)
+BEGIN
+    DECLARE v_id_jornada INT;
+
+    -- Qualquer erro SQL: desfaz tudo e retorna 500
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        SET p_codigo = 500;
+        SELECT p_codigo AS codigo, 'Erro ao cadastrar a jornada' AS mensagem;
+    END;
+
+    -- Validações básicas
+    IF p_nome IS NULL OR TRIM(p_nome) = ''
+       OR p_etapas IS NULL
+       OR JSON_TYPE(p_etapas) <> 'ARRAY'
+       OR JSON_LENGTH(p_etapas) = 0 THEN
+        SET p_codigo = 400;
+        SELECT p_codigo AS codigo, 'Informe o nome e ao menos uma etapa' AS mensagem;
+
+    ELSEIF NOT EXISTS (SELECT 1 FROM tbl_instituicao WHERE id = p_id_instituicao) THEN
+        SET p_codigo = 404;
+        SELECT p_codigo AS codigo, 'Instituição não encontrada' AS mensagem;
+
+    ELSE
+        START TRANSACTION;
+
+        -- 1) Jornada
+        INSERT INTO tbl_jornada (is_ativo, nome, descricao, id_instituicao)
+        VALUES (p_is_ativo, p_nome, p_descricao, p_id_instituicao);
+
+        SET v_id_jornada = LAST_INSERT_ID();
+
+        -- 2) Etapas (quantas vierem no JSON)
+        INSERT INTO tbl_etapa (
+            titulo, descricao, ordem, documento,
+            is_repetivel, is_agendavel, is_obrigatorio,
+            is_solicita_arquivo, is_precisa_aprovacao, id_jornada
+        )
+        SELECT
+            jt.titulo,
+            jt.descricao,
+            COALESCE(jt.ordem, jt.seq),   -- se não vier "ordem", usa a posição no array
+            jt.documento,                 -- NULL quando a etapa não tem documento
+            jt.is_repetivel,
+            jt.is_agendavel,
+            jt.is_obrigatorio,
+            jt.is_solicita_arquivo,
+            jt.is_precisa_aprovacao,
+            v_id_jornada
+        FROM JSON_TABLE(
+            p_etapas, '$[*]' COLUMNS (
+                seq                  FOR ORDINALITY,
+                titulo               VARCHAR(100) PATH '$.titulo',
+                descricao            TEXT         PATH '$.descricao',
+                ordem                INT          PATH '$.ordem'                NULL ON EMPTY,
+                documento            VARCHAR(255) PATH '$.documento'            NULL ON EMPTY,
+                is_repetivel         TINYINT      PATH '$.is_repetivel'         DEFAULT '0' ON EMPTY,
+                is_agendavel         TINYINT      PATH '$.is_agendavel'         DEFAULT '0' ON EMPTY,
+                is_obrigatorio       TINYINT      PATH '$.is_obrigatorio'       DEFAULT '0' ON EMPTY,
+                is_solicita_arquivo  TINYINT      PATH '$.is_solicita_arquivo'  DEFAULT '0' ON EMPTY,
+                is_precisa_aprovacao TINYINT      PATH '$.is_precisa_aprovacao' DEFAULT '0' ON EMPTY
+            )
+        ) AS jt;
+
+        COMMIT;
+        SET p_codigo = 200;
+
+        -- 3) Retorno: sucesso + jornada cadastrada
+        SELECT p_codigo AS codigo, 'Jornada cadastrada com sucesso' AS mensagem, j.*
+        FROM tbl_jornada j
+        WHERE j.id = v_id_jornada;
+
+        -- 4) Retorno: etapas cadastradas
+        SELECT e.*
+        FROM tbl_etapa e
+        WHERE e.id_jornada = v_id_jornada
+        ORDER BY e.ordem;
+    END IF;
+END$$
+
+DELIMITER ;
 
 
 
