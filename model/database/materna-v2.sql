@@ -1038,19 +1038,20 @@ DELIMITER ;
 
 
 ###################
-
 DELIMITER $$
 
-CREATE PROCEDURE proccadastrarjornadadoacao (
-    IN  p_id_doadora   INT,
-    IN  p_id_jornada   INT,
+CREATE PROCEDURE procvincularetapadoadora (
+    IN  p_id_doadora        INT,
+    IN  p_id_etapa          INT,
 
-    # Retorno: id da linha da primeira etapa
-    OUT p_id_primeira_etapa INT
+    # Retorno: id da linha criada em tbl_jornada_doacao
+    OUT p_id_jornada_doacao INT
 )
 BEGIN
-    DECLARE v_is_ativo     BOOLEAN;
-    DECLARE v_total_etapas INT DEFAULT 0;
+    DECLARE v_is_repetivel  BOOLEAN;
+    DECLARE v_ciclo         INT DEFAULT 1;
+    DECLARE v_ultimo_ciclo  INT;
+    DECLARE v_ultima_concl  DATE;
 
     # Se qualquer erro acontecer, desfaz tudo
     DECLARE EXIT HANDLER FOR SQLEXCEPTION
@@ -1065,62 +1066,54 @@ BEGIN
         SET MESSAGE_TEXT = 'Erro: doadora nao encontrada.';
     END IF;
 
-    # Jornada existe e esta ativa?
-    SELECT is_ativo INTO v_is_ativo
-    FROM tbl_jornada
-    WHERE id = p_id_jornada;
-
-    IF v_is_ativo IS NULL THEN
-        SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'Erro: jornada nao encontrada.';
-    END IF;
-
-    IF v_is_ativo = FALSE THEN
-        SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'Erro: esta jornada esta inativa.';
-    END IF;
-
-    # Jornada tem etapas?
-    SELECT COUNT(*) INTO v_total_etapas
+    # Etapa existe?
+    SELECT is_repetivel INTO v_is_repetivel
     FROM tbl_etapa
-    WHERE id_jornada = p_id_jornada;
+    WHERE id = p_id_etapa;
 
-    IF v_total_etapas = 0 THEN
+    IF v_is_repetivel IS NULL THEN
         SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'Erro: a jornada nao possui etapas.';
-    END IF;
-
-    # Doadora ja iniciou essa jornada?
-    IF EXISTS (
-        SELECT 1
-        FROM tbl_jornada_doacao jd
-        JOIN tbl_etapa e ON e.id = jd.id_etapa
-        WHERE jd.id_doadora = p_id_doadora
-          AND e.id_jornada  = p_id_jornada
-    ) THEN
-        SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'Erro: a doadora ja iniciou esta jornada.';
+        SET MESSAGE_TEXT = 'Erro: etapa nao encontrada.';
     END IF;
 
     START TRANSACTION;
 
-    # Cria uma linha por etapa, todas no ciclo 1 e sem conclusao
-    INSERT INTO tbl_jornada_doacao (ciclo, data_conclusao, id_etapa, id_doadora)
-    SELECT 1, NULL, e.id, p_id_doadora
-    FROM tbl_etapa e
-    WHERE e.id_jornada = p_id_jornada
-    ORDER BY e.ordem;
+    # Ja existe ligacao dessa doadora com essa etapa? (pega o ultimo ciclo)
+    SELECT ciclo, data_conclusao
+    INTO   v_ultimo_ciclo, v_ultima_concl
+    FROM tbl_jornada_doacao
+    WHERE id_doadora = p_id_doadora
+      AND id_etapa   = p_id_etapa
+    ORDER BY ciclo DESC
+    LIMIT 1
+    FOR UPDATE;
 
-    # Retorna o id da primeira etapa (menor ordem)
-    SELECT jd.id INTO p_id_primeira_etapa
-    FROM tbl_jornada_doacao jd
-    JOIN tbl_etapa e ON e.id = jd.id_etapa
-    WHERE jd.id_doadora = p_id_doadora
-      AND e.id_jornada  = p_id_jornada
-    ORDER BY e.ordem
-    LIMIT 1;
+    IF v_ultimo_ciclo IS NOT NULL THEN
+
+        # Etapa normal: so pode ser ligada uma vez
+        IF v_is_repetivel = FALSE THEN
+            SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Erro: a doadora ja esta ligada a esta etapa.';
+        END IF;
+
+        # Etapa repetivel: so abre novo ciclo se o anterior foi concluido
+        IF v_ultima_concl IS NULL THEN
+            SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Erro: o ciclo atual desta etapa ainda nao foi concluido.';
+        END IF;
+
+        SET v_ciclo = v_ultimo_ciclo + 1;
+    END IF;
+
+    INSERT INTO tbl_jornada_doacao (ciclo, data_conclusao, id_etapa, id_doadora)
+    VALUES (v_ciclo, NULL, p_id_etapa, p_id_doadora);
+
+    SET p_id_jornada_doacao = LAST_INSERT_ID();
 
     COMMIT;
 END$$
 
 DELIMITER ;
+
+
+CALL procvincularetapadoadora(5, 1, @id);
