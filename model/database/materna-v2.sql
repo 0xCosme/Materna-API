@@ -242,7 +242,7 @@ create table tbl_etapa(
     titulo 		            varchar(100)            not null,
     descricao               text                    not null,
     ordem                   int                     not null, 
-    documento		        varchar(255),               -- posição na jornada
+    documento		        varchar(255),               
     is_repetivel            boolean                 not null default false,  -- true na última etapa
     is_agendavel            boolean                 not null,
     is_obrigatorio          boolean                 not null,
@@ -259,57 +259,30 @@ create table tbl_etapa(
 
 );
 
+#CRIAÇÃO DA TABELA jornada doacao
+create table tbl_jornada_doacao(
+	id 			            int                     not null primary key auto_increment,
+    ciclo                   int                     not null,
+    data_conclusao          date,
 
-
-
-
-
-#CRIAÇÃO DA TABELA ciclo
-create table tbl_ciclo(
-	id 			          int                      not null primary key auto_increment,
-    numero_ciclo          int                      not null,
-    is_concluido	      boolean                  not null,
-
-    id_jornada            int                      not null,
-    id_doadora            int                      not null,
-
+    id_etapa                int                     not null,
+    id_doadora              int                     not null,
 
     #fazer relacao entre duas tabelas 
-    constraint			FK_JORNADA_CICLO          # nome do relacionamento
-    foreign key			(id_jornada)    		  # quem sera a FK natabla FK(foren key)
-    references			tbl_jornada(id),		  # de onde vem a FK
-
-
-	#fazer relacao entre duas tabelas 
-    constraint			FK_DOADORA_CICLO       # nome do relacionamento
-    foreign key			(id_doadora)    		  # quem sera a FK natabla FK(foren key)
-    references			tbl_doadora(id)		  # de onde vem a FK
-);
-
-
-#CRIAÇÃO DA TABELA etapa ciclo
-create table tbl_etapa_ciclo(
-	id 			        int                     not null primary key auto_increment,
-    data_conclusao 		date                    null,
-    
-    id_etapa            int                     not null,
-    id_ciclo            int                     not null,
-
+    constraint			FK_ETAPA_JORNADADOACAO        # nome do relacionamento
+    foreign key			(id_etapa)    		          # quem sera a FK na tabela
+    references			tbl_etapa(id),		          # de onde vem a FK
 
     #fazer relacao entre duas tabelas 
-    constraint			FK_ETAPA_ETAPACICLO       # nome do relacionamento
-    foreign key			(id_etapa)    		  # quem sera a FK natabla FK(foren key)
-    references			tbl_etapa(id),		  # de onde vem a FK
+    constraint			FK_DOADORA_JORNADADOACAO      # nome do relacionamento
+    foreign key			(id_doadora)    		      # quem sera a FK na tabela
+    references			tbl_doadora(id)		          # de onde vem a FK
 
-
-	#fazer relacao entre duas tabelas 
-    constraint			FK_CICLO_ETAPACICLO       # nome do relacionamento
-    foreign key			(id_ciclo)    		  # quem sera a FK natabla FK(foren key)
-    references			tbl_ciclo(id)		  # de onde vem a FK
 );
-
 
 ##############
+
+
 
 
 #CRIAÇÃO DA TABELA cadastro horario
@@ -335,21 +308,26 @@ create table tbl_status_agendamento(
 );
 
 
+
+
+
+REFAZEER ESSA PARTE
+
 #CRIAÇÃO DA TABELA agendamento
 create table tbl_agendamento(
 	id 			    int                     not null primary key auto_increment,
   
     
-	id_ciclo  						  int                     not null,
+	id_jornada_doacao 						  int                     not null,
     id_cadastro_horario				  int                     not null,
     id_status_agendamento			  int                     not null,
 
 
 
 	#fazer relacao entre duas tabelas 
-    constraint			FK_CICLO_AGENDAMENTO      # nome do relacionamento
-    foreign key			(id_ciclo)    		  # quem sera a FK natabla FK(foren key)
-    references			tbl_ciclo(id),		  # de onde vem a FK
+    constraint			FK_JORNADADOACAO_AGENDAMENTO          # nome do relacionamento
+    foreign key			(id_jornada_doacao)    		  # quem sera a FK natabla FK(foren key)
+    references			tbl_jornada_doacao(id),		  # de onde vem a FK
     
     #fazer relacao entre duas tabelas 
     constraint			FK_CADASTROHORARIO_AGENDAMENTO      # nome do relacionamento
@@ -369,22 +347,22 @@ create table tbl_agendamento(
 
 
 
-
+REFAZEER ESSA PARTE
 #CRIAÇÃO DA TABELA documento doadora
 create table tbl_documento_doadora(
 	id 			            int                     not null primary key auto_increment,
     documento		        varchar(255)             not null,
     motivo_recusa		    varchar(255)             not null,
     
-    id_etapa_ciclo          int                     not null,
+    id_jornada_doacao       int                     not null,
     id_doadora              int                     not null,
 
 
 
     #fazer relacao entre duas tabelas 
-    constraint			FK_ETAPACICLO_DOCUMENTODOADORA       # nome do relacionamento
-    foreign key			(id_etapa_ciclo)    		  # quem sera a FK natabla FK(foren key)
-    references			tbl_etapa_ciclo(id),		  # de onde vem a FK
+    constraint			FK_JORNADADOACAO_DOCUMENTODOADORA       # nome do relacionamento
+    foreign key			(id_jornada_doacao)    		            # quem sera a FK natabla FK(foren key)
+    references			tbl_jornada_doacao(id),		             # de onde vem a FK
     
      #fazer relacao entre duas tabelas 
     constraint			FK_DOADORA_DOCUMENTODOADORA       # nome do relacionamento
