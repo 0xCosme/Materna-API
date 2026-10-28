@@ -1117,3 +1117,151 @@ DELIMITER ;
 
 
 CALL procvincularetapadoadora(5, 1, @id);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#######################################################
+
+DROP PROCEDURE IF EXISTS procagendar;
+
+DELIMITER $$
+
+CREATE PROCEDURE procagendar (
+    IN  p_id_cadastro_horario   INT,
+    IN  p_id_jornada_doacao     INT,
+    IN  p_id_status_agendamento INT,
+
+    # Retorno: id do agendamento criado
+    OUT p_id_agendamento        INT
+)
+BEGIN
+    DECLARE v_id_etapa           INT;
+    DECLARE v_id_doadora         INT;
+    DECLARE v_ciclo              INT;
+    DECLARE v_data_conclusao     DATE;
+    DECLARE v_ordem              INT;
+    DECLARE v_id_jornada         INT;
+    DECLARE v_is_agendavel       BOOLEAN;
+    DECLARE v_id_etapa_horario   INT;
+    DECLARE v_dia                DATE;
+    DECLARE v_horario            TIME;
+    DECLARE v_pendentes          INT DEFAULT 0;
+
+    # Se qualquer erro acontecer, desfaz tudo
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        RESIGNAL;
+    END;
+
+    START TRANSACTION;
+
+    # Status existe?
+    IF NOT EXISTS (SELECT 1 FROM tbl_status_agendamento WHERE id = p_id_status_agendamento) THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Erro: status de agendamento nao encontrado.';
+    END IF;
+
+    # Etapa da doadora (trava a linha para evitar agendamento duplo)
+    SELECT jd.id_etapa, jd.id_doadora, jd.ciclo, jd.data_conclusao,
+           e.ordem, e.id_jornada, e.is_agendavel
+    INTO   v_id_etapa, v_id_doadora, v_ciclo, v_data_conclusao,
+           v_ordem, v_id_jornada, v_is_agendavel
+    FROM tbl_jornada_doacao jd
+    JOIN tbl_etapa e ON e.id = jd.id_etapa
+    WHERE jd.id = p_id_jornada_doacao
+    FOR UPDATE;
+
+    IF v_id_etapa IS NULL THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Erro: registro da jornada nao encontrado.';
+    END IF;
+
+    IF v_data_conclusao IS NOT NULL THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Erro: esta etapa ja foi concluida.';
+    END IF;
+
+    IF v_is_agendavel = FALSE THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Erro: esta etapa nao permite agendamento.';
+    END IF;
+
+    # Etapas obrigatorias anteriores (pela ordem) precisam estar concluidas
+    IF v_ciclo = 1 THEN
+        SELECT COUNT(*) INTO v_pendentes
+        FROM tbl_jornada_doacao jd
+        JOIN tbl_etapa e ON e.id = jd.id_etapa
+        WHERE jd.id_doadora     = v_id_doadora
+          AND e.id_jornada      = v_id_jornada
+          AND jd.ciclo          = 1
+          AND e.ordem           < v_ordem
+          AND e.is_obrigatorio  = TRUE
+          AND jd.data_conclusao IS NULL;
+
+        IF v_pendentes > 0 THEN
+            SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Erro: existem etapas obrigatorias anteriores pendentes.';
+        END IF;
+    END IF;
+
+    # Horario escolhido
+    SELECT id_etapa, dia, horario
+    INTO   v_id_etapa_horario, v_dia, v_horario
+    FROM tbl_cadastro_horario
+    WHERE id = p_id_cadastro_horario;
+
+    IF v_id_etapa_horario IS NULL THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Erro: horario nao encontrado.';
+    END IF;
+
+    # O horario precisa ser da mesma etapa da doadora
+    IF v_id_etapa_horario <> v_id_etapa THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Erro: este horario pertence a outra etapa.';
+    END IF;
+
+    # O horario nao pode estar no passado
+    IF TIMESTAMP(v_dia, v_horario) <= NOW() THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Erro: o horario escolhido ja passou.';
+    END IF;
+
+    # A doadora ja tem agendamento com esse status para esta etapa/ciclo?
+    IF EXISTS (
+        SELECT 1
+        FROM tbl_agendamento
+        WHERE id_jornada_doacao     = p_id_jornada_doacao
+          AND id_status_agendamento = p_id_status_agendamento
+    ) THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Erro: ja existe um agendamento ativo para esta etapa.';
+    END IF;
+
+    # AGENDAMENTO
+    INSERT INTO tbl_agendamento
+        (id_jornada_doacao, id_cadastro_horario, id_status_agendamento)
+    VALUES
+        (p_id_jornada_doacao, p_id_cadastro_horario, p_id_status_agendamento);
+
+    SET p_id_agendamento = LAST_INSERT_ID();
+
+    COMMIT;
+END$$
+
+DELIMITER ;
+
+-- horario 1, linha 3 de tbl_jornada_doacao, status 1 (Agendado)
+CALL procagendar(1, 3, 1, @id_agendamento);
