@@ -263,6 +263,7 @@ create table tbl_etapa(
 create table tbl_jornada_doacao(
 	id 			            int                     not null primary key auto_increment,
     ciclo                   int                     not null,
+
     data_conclusao          date,
 
     id_etapa                int                     not null,
@@ -1029,6 +1030,95 @@ BEGIN
     );
 
     SET p_id_cadastro_horario = LAST_INSERT_ID();
+
+    COMMIT;
+END$$
+
+DELIMITER ;
+
+
+###################
+
+DELIMITER $$
+
+CREATE PROCEDURE proccadastrarjornadadoacao (
+    IN  p_id_doadora   INT,
+    IN  p_id_jornada   INT,
+
+    # Retorno: id da linha da primeira etapa
+    OUT p_id_primeira_etapa INT
+)
+BEGIN
+    DECLARE v_is_ativo     BOOLEAN;
+    DECLARE v_total_etapas INT DEFAULT 0;
+
+    # Se qualquer erro acontecer, desfaz tudo
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        RESIGNAL;
+    END;
+
+    # Doadora existe?
+    IF NOT EXISTS (SELECT 1 FROM tbl_doadora WHERE id = p_id_doadora) THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Erro: doadora nao encontrada.';
+    END IF;
+
+    # Jornada existe e esta ativa?
+    SELECT is_ativo INTO v_is_ativo
+    FROM tbl_jornada
+    WHERE id = p_id_jornada;
+
+    IF v_is_ativo IS NULL THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Erro: jornada nao encontrada.';
+    END IF;
+
+    IF v_is_ativo = FALSE THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Erro: esta jornada esta inativa.';
+    END IF;
+
+    # Jornada tem etapas?
+    SELECT COUNT(*) INTO v_total_etapas
+    FROM tbl_etapa
+    WHERE id_jornada = p_id_jornada;
+
+    IF v_total_etapas = 0 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Erro: a jornada nao possui etapas.';
+    END IF;
+
+    # Doadora ja iniciou essa jornada?
+    IF EXISTS (
+        SELECT 1
+        FROM tbl_jornada_doacao jd
+        JOIN tbl_etapa e ON e.id = jd.id_etapa
+        WHERE jd.id_doadora = p_id_doadora
+          AND e.id_jornada  = p_id_jornada
+    ) THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Erro: a doadora ja iniciou esta jornada.';
+    END IF;
+
+    START TRANSACTION;
+
+    # Cria uma linha por etapa, todas no ciclo 1 e sem conclusao
+    INSERT INTO tbl_jornada_doacao (ciclo, data_conclusao, id_etapa, id_doadora)
+    SELECT 1, NULL, e.id, p_id_doadora
+    FROM tbl_etapa e
+    WHERE e.id_jornada = p_id_jornada
+    ORDER BY e.ordem;
+
+    # Retorna o id da primeira etapa (menor ordem)
+    SELECT jd.id INTO p_id_primeira_etapa
+    FROM tbl_jornada_doacao jd
+    JOIN tbl_etapa e ON e.id = jd.id_etapa
+    WHERE jd.id_doadora = p_id_doadora
+      AND e.id_jornada  = p_id_jornada
+    ORDER BY e.ordem
+    LIMIT 1;
 
     COMMIT;
 END$$
