@@ -1133,6 +1133,11 @@ CALL procvincularetapadoadora(5, 1, @id);
 
 #######################################################
 
+INSERT INTO tbl_status_agendamento (status) VALUES
+('Pendente'),
+('Aceito'),
+('Recusado');
+
 
 
 DROP PROCEDURE IF EXISTS procagendar;
@@ -1186,16 +1191,16 @@ BEGIN
         SET MESSAGE_TEXT = 'Erro: horario nao encontrado.';
     END IF;
 
-    # O horario esta disponivel? (cancelados nao ocupam)
+    # O horario esta disponivel? (so bloqueia se ja existir um Aceito)
     IF EXISTS (
         SELECT 1
         FROM tbl_agendamento a
         JOIN tbl_status_agendamento s ON s.id = a.id_status_agendamento
         WHERE a.id_cadastro_horario = p_id_cadastro_horario
-          AND s.status <> 'Cancelado'
+          AND s.status = 'Aceito'
     ) THEN
         SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'Erro: este horario nao esta disponivel.';
+        SET MESSAGE_TEXT = 'Erro: este horario ja possui um agendamento aceito.';
     END IF;
 
     # AGENDAMENTO
