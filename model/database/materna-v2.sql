@@ -1133,6 +1133,8 @@ CALL procvincularetapadoadora(5, 1, @id);
 
 #######################################################
 
+
+
 DROP PROCEDURE IF EXISTS procagendar;
 
 DELIMITER $$
@@ -1259,6 +1261,11 @@ BEGIN
     SET p_id_agendamento = LAST_INSERT_ID();
 
     COMMIT;
+
+    # Retorno de sucesso
+    SELECT 200 AS codigo,
+           'Agendamento realizado com sucesso' AS mensagem,
+           p_id_agendamento AS id_agendamento;
 END$$
 
 DELIMITER ;
