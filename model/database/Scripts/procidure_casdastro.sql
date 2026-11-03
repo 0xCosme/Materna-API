@@ -1,7 +1,6 @@
-#########################################################################################################
-# CADASTRA DOADORA
-#########################################################################################################
+#ARQUIVO RESPONSAVEL PELA CRIACAO DE TODAS PROCIDURE DE CADASTRO
 
+#CADASTRO DE DOADORA
 DELIMITER $$
 
 CREATE PROCEDURE proccadastrardoadora (
@@ -28,16 +27,14 @@ CREATE PROCEDURE proccadastrardoadora (
 
     # Cidade e Estado
     IN p_cidade           VARCHAR(100),
-    IN p_sigla_estado     VARCHAR(3),
-
-    # Retorno
-    OUT p_id_doadora      INT
+    IN p_sigla_estado     VARCHAR(3)
 )
 BEGIN
     DECLARE v_id_estado    INT;
     DECLARE v_id_cidade    INT;
     DECLARE v_id_endereco  INT;
     DECLARE v_id_telefone  INT;
+    DECLARE v_id_doadora   INT;   -- NOVO: guarda o id da doadora para devolver no final
 
     # Se qualquer erro acontecer, desfaz tudo
     DECLARE EXIT HANDLER FOR SQLEXCEPTION
@@ -88,45 +85,147 @@ BEGIN
         (nome, cpf, foto, data_nascimento, email, senha, sal, id_endereco, id_telefone)
     VALUES
         (p_nome, p_cpf, p_foto, p_data_nascimento, p_email, p_senha, p_sal, v_id_endereco, v_id_telefone);
-    SET p_id_doadora = LAST_INSERT_ID();
+    SET v_id_doadora = LAST_INSERT_ID();   -- NOVO
 
     COMMIT;
+
+    # NOVO: devolve o id para o DAO (resultado[0][0].id_doadora)
+    SELECT v_id_doadora AS id_doadora;
+END$$
+
+DELIMITER ;
+########################################################################################
+
+
+#CADASTRO DE FUNCIONARIO
+
+
+DELIMITER $$
+
+CREATE PROCEDURE proccadastrarfuncionario (
+    -- Funcionário
+    IN p_nome             VARCHAR(100),
+    IN p_cpf              VARCHAR(15),
+    IN p_data_nascimento  DATE,
+    IN p_email            VARCHAR(255),
+    IN p_adm              BOOLEAN,
+    IN p_senha            VARCHAR(255),
+    IN p_sal              VARCHAR(255),
+
+    -- Telefone
+    IN p_telefone         VARCHAR(25),
+
+    -- Instituição onde trabalha
+    IN p_id_instituicao   INT
+)
+BEGIN
+    DECLARE v_id_telefone INT;
+    DECLARE v_id_funcionario INT;
+
+    -- Se qualquer erro acontecer, desfaz tudo
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        RESIGNAL;
+    END;
+
+    START TRANSACTION;
+
+    -- TELEFONE
+    INSERT INTO tbl_telefone (numero)
+    VALUES (p_telefone);
+
+    SET v_id_telefone = LAST_INSERT_ID();
+
+    -- FUNCIONÁRIO
+    INSERT INTO tbl_funcionario (
+        nome,
+        cpf,
+        data_nascimento,
+        email,
+        adm,
+        senha,
+        sal,
+        id_telefone,
+        id_instituicao
+    )
+    VALUES (
+        p_nome,
+        p_cpf,
+        p_data_nascimento,
+        p_email,
+        p_adm,
+        p_senha,
+        p_sal,
+        v_id_telefone,
+        p_id_instituicao
+    );
+
+    SET v_id_funcionario = LAST_INSERT_ID();
+
+    COMMIT;
+
+    -- Retorna o ID para o DAO, igual à procedure da doadora
+    SELECT v_id_funcionario AS id_funcionario;
+
 END$$
 
 DELIMITER ;
 
 
+# CADASTRo DE CAMPANHA
+
+DROP PROCEDURE IF EXISTS proccadastrarcampanha;
+
+DELIMITER $$
+
+CREATE PROCEDURE proccadastrarcampanha (
+    # Campanha
+    IN p_titulo           VARCHAR(100),
+    IN p_descricao        TEXT,
+    IN p_foto             VARCHAR(255),
+    IN p_data_inicio      DATE,
+    IN p_data_fim         DATE,
+    IN p_is_ativo         BOOLEAN,
+
+    # Relacionamentos
+    IN p_id_instituicao   INT,
+    IN p_id_funcionario   INT
+)
+BEGIN
+    DECLARE v_id_campanha INT;
+
+    # Se qualquer erro acontecer, desfaz tudo
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        RESIGNAL;
+    END;
+
+    START TRANSACTION;
+
+    # CAMPANHA
+    INSERT INTO tbl_campanha
+        (titulo, descricao, foto, data_inicio, data_fim,
+         is_ativo, id_instituicao, id_funcionario)
+    VALUES
+        (p_titulo, p_descricao, p_foto, p_data_inicio, p_data_fim,
+         p_is_ativo, p_id_instituicao, p_id_funcionario);
+
+    SET v_id_campanha = LAST_INSERT_ID();
+
+    COMMIT;
+
+    # Devolve o ID para o DAO
+    SELECT v_id_campanha AS id_campanha;
+
+END$$
+
+DELIMITER ;
+#################################################################################
 
 
-CALL proccadastrardoadora(
-    'Maria da Silva',          # nome
-    '123.456.789-00',          # cpf
-    NULL,                      # foto
-    '1995-04-20',              # data_nascimento
-    'maria@email.com',         # email
-    'hash_da_senha',           # senha
-    'sal_aleatorio',           # sal
-    '(11) 91234-5678',         # telefone
-    'Rua das Flores',          # logradouro
-    '01234-567',               # cep
-    'Centro',                  # bairro
-    '100',                     # numero
-    'Apto 12',                 # complemento
-    -23.55052000,              # latitude
-    -46.63330800,              # longitude
-    'São Paulo',               # cidade
-    'SP',                      # sigla do estado
-    
-);
-
-##########################################################################################################################################
-
-
-#########################################################################################################
-# CADASTRA INSTITUICAO (com endereço, telefone e 7 dias de horário de funcionamento e funconario)
-#########################################################################################################
-
-DROP PROCEDURE IF EXISTS proccadastrarinstituicao;
+#CADASTRO DE Instituicao
 
 DELIMITER $$
 
@@ -170,11 +269,7 @@ CREATE PROCEDURE proccadastrarinstituicao (
     IN p_func_email            VARCHAR(255),
     IN p_func_senha            VARCHAR(255),
     IN p_func_sal              VARCHAR(255),
-    IN p_func_telefone         VARCHAR(25),
-
-    # Retorno
-    OUT p_id_instituicao  INT,
-    OUT p_id_funcionario  INT
+    IN p_func_telefone         VARCHAR(25)
 )
 BEGIN
     DECLARE v_id_estado             INT;
@@ -183,6 +278,7 @@ BEGIN
     DECLARE v_id_telefone           INT;
     DECLARE v_id_instituicao        INT;
     DECLARE v_id_telefone_func      INT;
+    DECLARE v_id_funcionario        INT;
 
     # Se qualquer erro acontecer, desfaz tudo
     DECLARE EXIT HANDLER FOR SQLEXCEPTION
@@ -261,188 +357,18 @@ BEGIN
     VALUES
         (p_func_nome, p_func_cpf, p_func_data_nascimento, p_func_email, TRUE,
          p_func_senha, p_func_sal, v_id_telefone_func, v_id_instituicao);
-    SET p_id_funcionario = LAST_INSERT_ID();
-
-    SET p_id_instituicao = v_id_instituicao;
+    SET v_id_funcionario = LAST_INSERT_ID();
 
     COMMIT;
+
+    # Retorno: os ids saem num SELECT (o knex lê em resultado[0][0])
+    SELECT v_id_instituicao AS id_instituicao, v_id_funcionario AS id_funcionario;
 END$$
 
 DELIMITER ;
+#########################################################################################
 
-CALL proccadastrarinstituicao(
-    -- Instituição
-    'Banco de Leite Esperança',
-    '12.345.678/0001-90', 
-    'contato@esperanca.org', 
-    'foto.jpg', 
-    1,
-    '(11) 99999-9999',
-    -- Endereço
-    'Rua das Flores', 
-    '06000-000', 'Centro', 
-    '100', 
-    'Sala 2',
-    -23.55052000, 
-    -46.63330800,
-    'Osasco', 
-    'SP',
-    -- Horários
-    1, '00:00', '00:00',    -- domingo (fechado)
-    2, '08:00', '17:00',    -- segunda
-    3, '08:00', '17:00',    -- terça
-    4, '08:00', '17:00',    -- quarta
-    5, '08:00', '17:00',    -- quinta
-    6, '08:00', '17:00',    -- sexta
-    7, '08:00', '12:00',    -- sábado
-    -- Funcionário
-    'Maria Souza', 
-    '123.456.789-00', 
-    '1990-05-20', 
-    'maria@esperanca.org',
-    'senha_hash_aqui', 
-    'sal_aleatorio_aqui', 
-    '(11) 98888-7777',
-    -- Retornos
-    @id_instituicao, @id_funcionario
-);
-
-SELECT @id_instituicao, @id_funcionario;
-
-#############################################################################################################
-
-#########################################################################################################
-# CADASTRA FUNCIONARIO
-#########################################################################################################
-
-DELIMITER $$
-
-CREATE PROCEDURE proccadastrarfuncionario (
-    # Funcionário
-    IN p_nome             VARCHAR(100),
-    IN p_cpf              VARCHAR(15),
-    IN p_data_nascimento  DATE,
-    IN p_email            VARCHAR(255),
-    IN p_adm              BOOLEAN,
-    IN p_senha            VARCHAR(255),
-    IN p_sal              VARCHAR(255),
-
-    # Telefone
-    IN p_telefone         VARCHAR(25),
-
-    # Instituição onde trabalha
-    IN p_id_instituicao   INT,
-
-    # Retorno
-    OUT p_id_funcionario  INT
-)
-BEGIN
-    DECLARE v_id_telefone  INT;
-
-    # Se qualquer erro acontecer, desfaz tudo
-    DECLARE EXIT HANDLER FOR SQLEXCEPTION
-    BEGIN
-        ROLLBACK;
-        RESIGNAL;
-    END;
-
-    START TRANSACTION;
-
-    # TELEFONE
-    INSERT INTO tbl_telefone (numero) VALUES (p_telefone);
-    SET v_id_telefone = LAST_INSERT_ID();
-
-    # FUNCIONÁRIO
-    INSERT INTO tbl_funcionario
-        (nome, cpf, data_nascimento, email, adm, senha, sal, id_telefone, id_instituicao)
-    VALUES
-        (p_nome, p_cpf, p_data_nascimento, p_email, p_adm, p_senha, p_sal, v_id_telefone, p_id_instituicao);
-    SET p_id_funcionario = LAST_INSERT_ID();
-
-    COMMIT;
-END$$
-
-DELIMITER ;
-
-
-CALL proccadastrarfuncionario(
-    'Maria Souza',              -- nome
-    '123.456.789-00',           -- cpf
-    '1990-05-20',               -- data de nascimento
-    'maria@esperanca.org',      -- email
-    TRUE,                       -- adm (TRUE = administradora, FALSE = comum)
-    'senha_hash_aqui',          -- senha (já criptografada)
-    'sal_aleatorio_aqui',       -- sal
-    '(11) 98888-7777',          -- telefone
-    1,                          -- id da instituição onde trabalha
-    @id_funcionario
-);
-
-
-
-##############################################################################################
-
-#########################################################################################################
-# CADASTRA CAMPANHA
-#########################################################################################################
-
-DELIMITER $$
-
-CREATE PROCEDURE proccadastrarcampanha (
-    # Campanha
-    IN p_titulo           VARCHAR(100),
-    IN p_descricao        TEXT,
-    IN p_foto             VARCHAR(255),
-    IN p_data_inicio      DATE,
-    IN p_data_fim         DATE,
-    IN p_is_ativo         BOOLEAN,
-
-    # Relacionamentos
-    IN p_id_instituicao   INT,
-    IN p_id_funcionario   INT,
-
-    # Retorno
-    OUT p_id_campanha     INT
-)
-BEGIN
-    # Se qualquer erro acontecer, desfaz tudo
-    DECLARE EXIT HANDLER FOR SQLEXCEPTION
-    BEGIN
-        ROLLBACK;
-        RESIGNAL;
-    END;
-
-    START TRANSACTION;
-
-    # CAMPANHA
-    INSERT INTO tbl_campanha
-        (titulo, descricao, foto, data_inicio, data_fim, is_ativo, id_instituicao, id_funcionario)
-    VALUES
-        (p_titulo, p_descricao, p_foto, p_data_inicio, p_data_fim, p_is_ativo, p_id_instituicao, p_id_funcionario);
-    SET p_id_campanha = LAST_INSERT_ID();
-
-    COMMIT;
-END$$
-
-DELIMITER ;
-
-CALL proccadastrarcampanha(
-    'Campanha Julho Dourado',                                  -- titulo
-    'Campanha de incentivo à doação de leite materno.',        -- descricao
-    'campanha_julho.jpg',                                      -- foto
-    '2026-07-01',                                              -- data de início
-    '2026-07-31',                                              -- data de fim
-    TRUE,                                                      -- is_ativo
-    1,                                                         -- id da instituição
-    1,                                           -- id do funcionário que criou
-    @id_campanha                                               -- retorno
-);
-
-
-
-
-
-#########################
+#PROCIDURE DE CADASTRO DE Jornada
 DELIMITER $$
 
 CREATE PROCEDURE proccadastrarjornada(
@@ -534,61 +460,9 @@ BEGIN
 END$$
 
 DELIMITER ;
+#############################################################################################
 
-
- ###como usar
-CALL sp_cadastrar_jornada(
-    TRUE,                                   -- is_ativo
-    'Jornada de Matrícula',                 -- nome
-    'Passo a passo para novos alunos',      -- descricao
-    1,                                      -- id_instituicao
-    '[
-        {
-            "titulo": "Envio de documentos",
-            "descricao": "Enviar RG e CPF",
-            "ordem": 1,
-            "documento": "contrato.pdf",
-            "is_repetivel": 0,
-            "is_agendavel": 0,
-            "is_obrigatorio": 1,
-            "is_solicita_arquivo": 1,
-            "is_precisa_aprovacao": 1
-        },
-        {
-            "titulo": "Entrevista",
-            "descricao": "Agendar conversa com a coordenação",
-            "ordem": 2,
-            "documento": null,
-            "is_repetivel": 0,
-            "is_agendavel": 1,
-            "is_obrigatorio": 1,
-            "is_solicita_arquivo": 0,
-            "is_precisa_aprovacao": 0
-        },
-        {
-            "titulo": "Acompanhamento",
-            "descricao": "Etapa final, pode se repetir",
-            "ordem": 3,
-            "documento": null,
-            "is_repetivel": 1,
-            "is_agendavel": 0,
-            "is_obrigatorio": 0,
-            "is_solicita_arquivo": 0,
-            "is_precisa_aprovacao": 0
-        }
-    ]',
-    @codigo
-);
-
-SELECT @codigo;
-
-
-
-
-
-
-
-
+#PROCIDURE DE CADASTRO DE HORARIO
 
 DELIMITER $$
 
@@ -598,10 +472,7 @@ CREATE PROCEDURE proccadastrarhorario (
     IN p_horario   TIME,
 
     # Etapa relacionada
-    IN p_id_etapa  INT,
-
-    # Retorno
-    OUT p_id_cadastro_horario INT
+    IN p_id_etapa  INT
 )
 BEGIN
     DECLARE v_is_agendavel BOOLEAN;
@@ -650,16 +521,173 @@ BEGIN
         p_id_etapa
     );
 
-    SET p_id_cadastro_horario = LAST_INSERT_ID();
+    # Retorno do id cadastrado
+    SELECT LAST_INSERT_ID() AS id_cadastro_horario;
 
     COMMIT;
 END$$
 
 DELIMITER ;
+###############################################################################
+ 
 
-CALL proccadastrarhorario(
-    '2026-11-10',       -- Dia do agendamento
-    '14:30:00',         -- Horário
-    1,                  -- ID da etapa
-    @id_cadastro_horario
-);
+#PROCIDURE RESPONSAVEL POR AGRUPAR A DOADORA COM ETAPA
+DELIMITER $$
+
+	CREATE PROCEDURE procvincularetapadoadora (
+		IN  p_id_doadora        INT,
+		IN  p_id_etapa          INT,
+
+		# Retorno: id da linha criada em tbl_jornada_doacao
+		OUT p_id_jornada_doacao INT
+	)
+	BEGIN
+		DECLARE v_is_repetivel  BOOLEAN;
+		DECLARE v_ciclo         INT DEFAULT 1;
+		DECLARE v_ultimo_ciclo  INT;
+		DECLARE v_ultima_concl  DATE;
+
+		# Se qualquer erro acontecer, desfaz tudo
+		DECLARE EXIT HANDLER FOR SQLEXCEPTION
+		BEGIN
+			ROLLBACK;
+			RESIGNAL;
+		END;
+
+		# Doadora existe?
+		IF NOT EXISTS (SELECT 1 FROM tbl_doadora WHERE id = p_id_doadora) THEN
+			SIGNAL SQLSTATE '45000'
+			SET MESSAGE_TEXT = 'Erro: doadora nao encontrada.';
+		END IF;
+
+		# Etapa existe?
+		SELECT is_repetivel INTO v_is_repetivel
+		FROM tbl_etapa
+		WHERE id = p_id_etapa;
+
+		IF v_is_repetivel IS NULL THEN
+			SIGNAL SQLSTATE '45000'
+			SET MESSAGE_TEXT = 'Erro: etapa nao encontrada.';
+		END IF;
+
+		START TRANSACTION;
+
+		# Ja existe ligacao dessa doadora com essa etapa? (pega o ultimo ciclo)
+		SELECT ciclo, data_conclusao
+		INTO   v_ultimo_ciclo, v_ultima_concl
+		FROM tbl_jornada_doacao
+		WHERE id_doadora = p_id_doadora
+		  AND id_etapa   = p_id_etapa
+		ORDER BY ciclo DESC
+		LIMIT 1
+		FOR UPDATE;
+
+		IF v_ultimo_ciclo IS NOT NULL THEN
+
+			# Etapa normal: so pode ser ligada uma vez
+			IF v_is_repetivel = FALSE THEN
+				SIGNAL SQLSTATE '45000'
+				SET MESSAGE_TEXT = 'Erro: a doadora ja esta ligada a esta etapa.';
+			END IF;
+
+			# Etapa repetivel: so abre novo ciclo se o anterior foi concluido
+			IF v_ultima_concl IS NULL THEN
+				SIGNAL SQLSTATE '45000'
+				SET MESSAGE_TEXT = 'Erro: o ciclo atual desta etapa ainda nao foi concluido.';
+			END IF;
+
+			SET v_ciclo = v_ultimo_ciclo + 1;
+		END IF;
+
+		INSERT INTO tbl_jornada_doacao (ciclo, data_conclusao, id_etapa, id_doadora)
+		VALUES (v_ciclo, NULL, p_id_etapa, p_id_doadora);
+
+		SET p_id_jornada_doacao = LAST_INSERT_ID();
+
+		COMMIT;
+	END$$
+
+DELIMITER ;
+#########################################################################################################
+
+
+
+# PROCIDURE RESPONSAVLE POR SOLICITAR AGENDAMENTO
+DELIMITER $$
+
+CREATE PROCEDURE procagendar (
+    IN  p_id_cadastro_horario   INT,
+    IN  p_id_jornada_doacao     INT,
+    IN  p_id_status_agendamento INT,
+
+    # Retorno: id do agendamento criado
+    OUT p_id_agendamento        INT
+)
+BEGIN
+    DECLARE v_is_agendavel  BOOLEAN;
+    DECLARE v_disponivel    BOOLEAN;
+
+    # Se qualquer erro acontecer, desfaz tudo
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        RESIGNAL;
+    END;
+
+    START TRANSACTION;
+
+    # A etapa da doadora e agendavel?
+    SELECT e.is_agendavel
+    INTO   v_is_agendavel
+    FROM tbl_jornada_doacao jd
+    JOIN tbl_etapa e ON e.id = jd.id_etapa
+    WHERE jd.id = p_id_jornada_doacao;
+
+    IF v_is_agendavel IS NULL THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Erro: registro da jornada nao encontrado.';
+    END IF;
+
+    IF v_is_agendavel = FALSE THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Erro: esta etapa nao permite agendamento.';
+    END IF;
+
+    # O horario existe e esta disponivel?
+    SELECT disponivel
+    INTO   v_disponivel
+    FROM tbl_cadastro_horario
+    WHERE id = p_id_cadastro_horario
+    FOR UPDATE;
+
+    IF v_disponivel IS NULL THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Erro: horario nao encontrado.';
+    END IF;
+
+    IF v_disponivel = FALSE THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Erro: este horario nao esta disponivel.';
+    END IF;
+
+    # AGENDAMENTO
+    INSERT INTO tbl_agendamento
+        (id_jornada_doacao, id_cadastro_horario, id_status_agendamento)
+    VALUES
+        (p_id_jornada_doacao, p_id_cadastro_horario, p_id_status_agendamento);
+
+    SET p_id_agendamento = LAST_INSERT_ID();
+
+    COMMIT;
+
+    # Retorno de sucesso
+    SELECT 200 AS codigo,
+           'Agendamento realizado com sucesso' AS mensagem,
+           p_id_agendamento AS id_agendamento;
+END$$
+
+DELIMITER ;
+##############################################################################################################
+
+
+

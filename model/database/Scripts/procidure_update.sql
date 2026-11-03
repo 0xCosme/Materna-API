@@ -1,7 +1,6 @@
-#########################################################################################################
-#ATUALIZAR DOADORA
-#########################################################################################################
+#ARQUIVO RESPONSAVEL PELA CRIACAO DE TODAS PROCIDURE DE ATUALIZACAO
 
+# PROCIDURE DE ATUALIZAR DOADORA
 DELIMITER $$
 
 CREATE PROCEDURE procatualizardoadora (
@@ -117,46 +116,75 @@ END$$
 
 DELIMITER ;
 
-CALL procatualizardoadora(
-    1,                              -- id da doadora
-    'Ana Paula Lima',               -- nome
-    '987.654.321-00',               -- cpf
-    'ana_nova.jpg',                 -- foto
-    '1995-03-10',                   -- data de nascimento
-    'ana@email.com',                -- email
-    'novo_hash_aqui',               -- senha (já criptografada)
-    'novo_sal_aqui',                -- sal
-    '(11) 97777-6666',              -- telefone
-    'Av. Brasil',                   -- logradouro
-    '06100-000',                    -- cep
-    'Jardim América',               -- bairro
-    '250',                          -- numero
-    'Apto 12',                      -- complemento
-    -23.56000000,                   -- latitude
-    -46.64000000,                   -- longitude
-    'Osasco',                       -- cidade
-    'SP'                            -- sigla do estado
-);
+############################################################################################
 
-SELECT * FROM tbl_doadora WHERE id = 1;
+# PROCIDURE DE ATUALIZAR FUNCIONARIO
+DELIMITER $$
 
+CREATE PROCEDURE procatualizarfuncionario (
+    # Identificação
+    IN p_id_funcionario   INT,
 
+    # Funcionário
+    IN p_nome             VARCHAR(100),
+    IN p_cpf              VARCHAR(15),
+    IN p_data_nascimento  DATE,
+    IN p_email            VARCHAR(255),
+    IN p_adm              BOOLEAN,
+    IN p_senha            VARCHAR(255),
+    IN p_sal              VARCHAR(255),
 
+    # Telefone
+    IN p_telefone         VARCHAR(25)
+)
+BEGIN
+    DECLARE v_id_telefone  INT;
+    DECLARE v_existe       INT DEFAULT 0;
 
+    # Se qualquer erro acontecer, desfaz tudo
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        RESIGNAL;
+    END;
 
+    # Confere se o funcionário existe e busca o telefone atual
+    SELECT COUNT(*), MAX(id_telefone)
+    INTO v_existe, v_id_telefone
+    FROM tbl_funcionario
+    WHERE id = p_id_funcionario;
 
+    # Se o funcionário não existir, para com erro
+    IF v_existe = 0 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Funcionario nao encontrado';
+    END IF;
 
+    START TRANSACTION;
 
+    # TELEFONE
+    UPDATE tbl_telefone
+    SET numero = p_telefone
+    WHERE id = v_id_telefone;
 
+    # FUNCIONÁRIO
+    UPDATE tbl_funcionario
+    SET nome            = p_nome,
+        cpf             = p_cpf,
+        data_nascimento = p_data_nascimento,
+        email           = p_email,
+        adm             = p_adm,
+        senha           = p_senha,
+        sal             = p_sal
+    WHERE id = p_id_funcionario;
 
+    COMMIT;
+END$$
 
+DELIMITER ;
+###############################################################################################3333
 
-
-
-
-
-//////////
-
+# PROCIDURE DE ATUALIZAR INSTITUICAO
 DELIMITER $$
 
 CREATE PROCEDURE procatualizarinstituicao (
@@ -303,67 +331,27 @@ BEGIN
     COMMIT;
 END$$
 
-DELIMITER ;
 
 
+DELIMITER ;	
+############################################################################################################################3
 
-CALL procatualizarinstituicao(
-    1,                                  -- id da instituição
-    -- Instituição
-    'Banco de Leite Esperança Osasco',  -- nome
-    '12.345.678/0001-90',               -- cnpj
-    'novo@esperanca.org',               -- email
-    'foto_nova.jpg',                    -- foto
-    2,                                  -- id do tipo de coleta
-    '(11) 97777-1111',                  -- telefone
-    -- Endereço
-    'Av. Brasil',                       -- logradouro
-    '06100-000',                        -- cep
-    'Jardim América',                   -- bairro
-    '250',                              -- numero
-    'Bloco B',                          -- complemento
-    -23.56000000,                       -- latitude
-    -46.64000000,                       -- longitude
-    'Osasco',                           -- cidade
-    'SP',                               -- sigla do estado
-    -- Horários
-    1, '00:00', '00:00',                -- domingo (fechado)
-    2, '07:00', '18:00',                -- segunda
-    3, '07:00', '18:00',                -- terça
-    4, '07:00', '18:00',                -- quarta
-    5, '07:00', '18:00',                -- quinta
-    6, '07:00', '18:00',                -- sexta
-    7, '08:00', '13:00'                 -- sábado
-);
-
--- Conferindo o resultado
-SELECT * FROM tbl_instituicao WHERE id = 1;
-SELECT * FROM tbl_horario_funcionamento WHERE id_instituicao = 1;
-
-
-
-/////////////////////////////////////////////
+#PROCIDURE RESPONSAVEL POR ATUALIZAR UM AGENDAMENTO PRA ACEITO OU RECUSADO
 DELIMITER $$
 
-CREATE PROCEDURE procatualizarfuncionario (
-    # Identificação
-    IN p_id_funcionario   INT,
-
-    # Funcionário
-    IN p_nome             VARCHAR(100),
-    IN p_cpf              VARCHAR(15),
-    IN p_data_nascimento  DATE,
-    IN p_email            VARCHAR(255),
-    IN p_adm              BOOLEAN,
-    IN p_senha            VARCHAR(255),
-    IN p_sal              VARCHAR(255),
-
-    # Telefone
-    IN p_telefone         VARCHAR(25)
+CREATE PROCEDURE procatualizaragendamento (
+    IN p_id_agendamento         INT,
+    IN p_id_status_agendamento  INT
 )
 BEGIN
-    DECLARE v_id_telefone  INT;
-    DECLARE v_existe       INT DEFAULT 0;
+    DECLARE v_id_cadastro_horario INT;
+    DECLARE v_id_status_atual     INT;
+    DECLARE v_disponivel          BOOLEAN;
+
+    # Ids dos status (Pendente = 1, Aceito = 2, Recusado = 3)
+    DECLARE v_id_status_pendente  INT DEFAULT 1;
+    DECLARE v_id_status_aceito    INT DEFAULT 2;
+    DECLARE v_id_status_recusado  INT DEFAULT 3;
 
     # Se qualquer erro acontecer, desfaz tudo
     DECLARE EXIT HANDLER FOR SQLEXCEPTION
@@ -372,54 +360,76 @@ BEGIN
         RESIGNAL;
     END;
 
-    # Confere se o funcionário existe e busca o telefone atual
-    SELECT COUNT(*), MAX(id_telefone)
-    INTO v_existe, v_id_telefone
-    FROM tbl_funcionario
-    WHERE id = p_id_funcionario;
-
-    # Se o funcionário não existir, para com erro
-    IF v_existe = 0 THEN
+    # So aceita Aceito ou Recusado
+    IF p_id_status_agendamento NOT IN (v_id_status_aceito, v_id_status_recusado) THEN
         SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'Funcionario nao encontrado';
+        SET MESSAGE_TEXT = 'Erro: o status deve ser Aceito ou Recusado.';
     END IF;
 
     START TRANSACTION;
 
-    # TELEFONE
-    UPDATE tbl_telefone
-    SET numero = p_telefone
-    WHERE id = v_id_telefone;
+    # Busca o agendamento (trava a linha)
+    SELECT id_cadastro_horario, id_status_agendamento
+    INTO   v_id_cadastro_horario, v_id_status_atual
+    FROM tbl_agendamento
+    WHERE id = p_id_agendamento
+    FOR UPDATE;
 
-    # FUNCIONÁRIO
-    UPDATE tbl_funcionario
-    SET nome            = p_nome,
-        cpf             = p_cpf,
-        data_nascimento = p_data_nascimento,
-        email           = p_email,
-        adm             = p_adm,
-        senha           = p_senha,
-        sal             = p_sal
-    WHERE id = p_id_funcionario;
+    IF v_id_cadastro_horario IS NULL THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Erro: agendamento nao encontrado.';
+    END IF;
+
+    # So muda se estiver Pendente
+    IF v_id_status_atual <> v_id_status_pendente THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Erro: so e possivel alterar agendamentos pendentes.';
+    END IF;
+
+    IF p_id_status_agendamento = v_id_status_aceito THEN
+
+        # Trava o horario e confere se ainda esta disponivel
+        SELECT disponivel INTO v_disponivel
+        FROM tbl_cadastro_horario
+        WHERE id = v_id_cadastro_horario
+        FOR UPDATE;
+
+        IF v_disponivel = FALSE THEN
+            SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Erro: este horario nao esta mais disponivel.';
+        END IF;
+
+        # Aceita e deixa o horario indisponivel
+        UPDATE tbl_agendamento
+        SET id_status_agendamento = v_id_status_aceito
+        WHERE id = p_id_agendamento;
+
+        UPDATE tbl_cadastro_horario
+        SET disponivel = FALSE
+        WHERE id = v_id_cadastro_horario;
+
+    ELSE
+
+        # Recusa (o horario continua disponivel)
+        UPDATE tbl_agendamento
+        SET id_status_agendamento = v_id_status_recusado
+        WHERE id = p_id_agendamento;
+
+    END IF;
 
     COMMIT;
+
+    # Retorno de sucesso
+    SELECT 200 AS codigo,
+           'Agendamento atualizado com sucesso' AS mensagem,
+           p_id_agendamento AS id_agendamento;
 END$$
 
 DELIMITER ;
+############################################################################################
 
 
 
-CALL procatualizarfuncionario(
-    1,                              -- id do funcionário
-    'Maria Souza Lima',             -- nome
-    '123.456.789-00',               -- cpf
-    '1990-05-20',                   -- data de nascimento
-    'maria.nova@esperanca.org',     -- email
-    TRUE,                           -- adm (TRUE = administrador)
-    'novo_hash_aqui',               -- senha (já criptografada)
-    'novo_sal_aqui',                -- sal
-    '(11) 96666-5555'               -- telefone
-);
 
--- Conferindo o resultado
-SELECT * FROM tbl_funcionario WHERE id = 1;
+
+
