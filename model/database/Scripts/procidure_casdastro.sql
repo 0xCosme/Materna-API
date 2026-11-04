@@ -174,9 +174,6 @@ DELIMITER ;
 
 
 # CADASTRo DE CAMPANHA
-
-DROP PROCEDURE IF EXISTS proccadastrarcampanha;
-
 DELIMITER $$
 
 CREATE PROCEDURE proccadastrarcampanha (
@@ -226,7 +223,6 @@ DELIMITER ;
 
 
 #CADASTRO DE Instituicao
-
 DELIMITER $$
 
 CREATE PROCEDURE proccadastrarinstituicao (
@@ -463,7 +459,6 @@ DELIMITER ;
 #############################################################################################
 
 #PROCIDURE DE CADASTRO DE HORARIO
-
 DELIMITER $$
 
 CREATE PROCEDURE proccadastrarhorario (
@@ -531,81 +526,64 @@ DELIMITER ;
 ###############################################################################
  
 
-#PROCIDURE RESPONSAVEL POR AGRUPAR A DOADORA COM ETAPA
+DROP PROCEDURE IF EXISTS procvincularetapadoadora;
+
+#PROCIDURE RESPONSAVEL POR cadastrar jornada doacao
 DELIMITER $$
 
-	CREATE PROCEDURE procvincularetapadoadora (
-		IN  p_id_doadora        INT,
-		IN  p_id_etapa          INT,
+    CREATE PROCEDURE procvincularetapadoadora (
+        IN  p_id_doadora        INT,
+        IN  p_id_etapa          INT,
+        IN  p_id_instituicao    INT,
+        IN  p_id_jornada        INT,
 
-		# Retorno: id da linha criada em tbl_jornada_doacao
-		OUT p_id_jornada_doacao INT
-	)
-	BEGIN
-		DECLARE v_is_repetivel  BOOLEAN;
-		DECLARE v_ciclo         INT DEFAULT 1;
-		DECLARE v_ultimo_ciclo  INT;
-		DECLARE v_ultima_concl  DATE;
+        # Retorno: id da linha criada em tbl_jornada_doacao
+        OUT p_id_jornada_doacao INT
+    )
+    BEGIN
+        # Se qualquer erro acontecer, desfaz tudo
+        DECLARE EXIT HANDLER FOR SQLEXCEPTION
+        BEGIN
+            ROLLBACK;
+            RESIGNAL;
+        END;
 
-		# Se qualquer erro acontecer, desfaz tudo
-		DECLARE EXIT HANDLER FOR SQLEXCEPTION
-		BEGIN
-			ROLLBACK;
-			RESIGNAL;
-		END;
+        # Doadora existe?
+        IF NOT EXISTS (SELECT 1 FROM tbl_doadora WHERE id = p_id_doadora) THEN
+            SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Erro: doadora nao encontrada.';
+        END IF;
 
-		# Doadora existe?
-		IF NOT EXISTS (SELECT 1 FROM tbl_doadora WHERE id = p_id_doadora) THEN
-			SIGNAL SQLSTATE '45000'
-			SET MESSAGE_TEXT = 'Erro: doadora nao encontrada.';
-		END IF;
+        # Etapa existe?
+        IF NOT EXISTS (SELECT 1 FROM tbl_etapa WHERE id = p_id_etapa) THEN
+            SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Erro: etapa nao encontrada.';
+        END IF;
 
-		# Etapa existe?
-		SELECT is_repetivel INTO v_is_repetivel
-		FROM tbl_etapa
-		WHERE id = p_id_etapa;
+        # Instituicao existe?
+        IF NOT EXISTS (SELECT 1 FROM tbl_instituicao WHERE id = p_id_instituicao) THEN
+            SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Erro: instituicao nao encontrada.';
+        END IF;
 
-		IF v_is_repetivel IS NULL THEN
-			SIGNAL SQLSTATE '45000'
-			SET MESSAGE_TEXT = 'Erro: etapa nao encontrada.';
-		END IF;
+        # Jornada existe?
+        IF NOT EXISTS (SELECT 1 FROM tbl_jornada WHERE id = p_id_jornada) THEN
+            SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Erro: jornada nao encontrada.';
+        END IF;
 
-		START TRANSACTION;
+        START TRANSACTION;
 
-		# Ja existe ligacao dessa doadora com essa etapa? (pega o ultimo ciclo)
-		SELECT ciclo, data_conclusao
-		INTO   v_ultimo_ciclo, v_ultima_concl
-		FROM tbl_jornada_doacao
-		WHERE id_doadora = p_id_doadora
-		  AND id_etapa   = p_id_etapa
-		ORDER BY ciclo DESC
-		LIMIT 1
-		FOR UPDATE;
+        # Ciclo sempre 1 e sem data de conclusao
+        INSERT INTO tbl_jornada_doacao
+            (ciclo, data_conclusao, id_etapa, id_doadora, id_instituicao, id_jornada)
+        VALUES
+            (1, NULL, p_id_etapa, p_id_doadora, p_id_instituicao, p_id_jornada);
 
-		IF v_ultimo_ciclo IS NOT NULL THEN
+        SET p_id_jornada_doacao = LAST_INSERT_ID();
 
-			# Etapa normal: so pode ser ligada uma vez
-			IF v_is_repetivel = FALSE THEN
-				SIGNAL SQLSTATE '45000'
-				SET MESSAGE_TEXT = 'Erro: a doadora ja esta ligada a esta etapa.';
-			END IF;
-
-			# Etapa repetivel: so abre novo ciclo se o anterior foi concluido
-			IF v_ultima_concl IS NULL THEN
-				SIGNAL SQLSTATE '45000'
-				SET MESSAGE_TEXT = 'Erro: o ciclo atual desta etapa ainda nao foi concluido.';
-			END IF;
-
-			SET v_ciclo = v_ultimo_ciclo + 1;
-		END IF;
-
-		INSERT INTO tbl_jornada_doacao (ciclo, data_conclusao, id_etapa, id_doadora)
-		VALUES (v_ciclo, NULL, p_id_etapa, p_id_doadora);
-
-		SET p_id_jornada_doacao = LAST_INSERT_ID();
-
-		COMMIT;
-	END$$
+        COMMIT;
+    END$$
 
 DELIMITER ;
 #########################################################################################################
