@@ -265,9 +265,12 @@ create table tbl_jornada_doacao(
     ciclo                   int                     not null,
 
     data_conclusao          date,
+    encerrado               boolean                 not null default false,
 
     id_etapa                int                     not null,
     id_doadora              int                     not null,
+    id_instituicao          int                     not null,
+    id_jornada              int                     not null,
 
     #fazer relacao entre duas tabelas 
     constraint			FK_ETAPA_JORNADADOACAO        # nome do relacionamento
@@ -277,7 +280,17 @@ create table tbl_jornada_doacao(
     #fazer relacao entre duas tabelas 
     constraint			FK_DOADORA_JORNADADOACAO      # nome do relacionamento
     foreign key			(id_doadora)    		      # quem sera a FK na tabela
-    references			tbl_doadora(id)		          # de onde vem a FK
+    references			tbl_doadora(id),		      # de onde vem a FK
+
+    #fazer relacao entre duas tabelas 
+    constraint			FK_INSTITUICAO_JORNADADOACAO  # nome do relacionamento
+    foreign key			(id_instituicao)    		  # quem sera a FK na tabela
+    references			tbl_instituicao(id),		  # de onde vem a FK
+
+    #fazer relacao entre duas tabelas 
+    constraint			FK_JORNADA_JORNADADOACAO      # nome do relacionamento
+    foreign key			(id_jornada)    		      # quem sera a FK na tabela
+    references			tbl_jornada(id)		          # de onde vem a FK
 
 );
 
