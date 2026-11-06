@@ -380,3 +380,9 @@ create table tbl_documento_doadora(
     references			tbl_status_agendamento(id)		        # de onde vem a FK
 
 );
+
+
+INSERT INTO tbl_status_agendamento (status) VALUES
+('Pendente'),
+('Aceito'),
+('Recusado');
