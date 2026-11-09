@@ -1,10 +1,6 @@
 #ARQUIVOS RESPONDSAVEL POR FAZER CADASTRO
 
 #######################################################
-INSERT INTO tbl_status_agendamento (status) VALUES
-('Pendente'),
-('Aceito'),
-('Recusado');
 
 
 
