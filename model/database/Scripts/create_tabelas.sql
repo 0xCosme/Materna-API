@@ -381,6 +381,20 @@ create table tbl_documento_doadora(
 
 );
 
+#CRIAÇÃO DA TABELA codigo envio
+create table tbl_codigo_envio(
+    id                    int                     not null primary key auto_increment,
+    codigo                int                     not null,
+    data_criacao          datetime                not null,
+
+    id_doadora            int                     not null,
+
+    #fazer relacao entre duas tabelas 
+    constraint			FK_DOADORA_CODIGOENVIO        # nome do relacionamento
+    foreign key			(id_doadora)    		      # quem sera a FK na tabela
+    references			tbl_doadora(id)		          # de onde vem a FK
+
+);
 
 INSERT INTO tbl_status_agendamento (status) VALUES
 ('Pendente'),
