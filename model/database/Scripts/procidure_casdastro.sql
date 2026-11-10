@@ -91,15 +91,17 @@ BEGIN
         (p_nome, p_cpf, p_foto, p_data_nascimento, p_email, p_senha, p_sal, v_id_endereco, v_id_telefone);
     SET v_id_doadora = LAST_INSERT_ID();
 
-    # CODIGO DE ENVIO (data e hora atuais)
-    INSERT INTO tbl_codigo_envio (codigo, data_criacao, id_doadora)
-    VALUES (p_codigo, NOW(), v_id_doadora);
+    # CODIGO DE ENVIO (codigo, email, data e hora atuais)
+    INSERT INTO tbl_codigo_envio (codigo, email, data_criacao, id_doadora)
+    VALUES (p_codigo, p_email, NOW(), v_id_doadora);
 
     COMMIT;
 
     # Devolve o id para o DAO (resultado[0][0].id_doadora)
     SELECT v_id_doadora AS id_doadora;
 END$$
+
+
 
 #CALL proccadastrardoadora(
 #    'Maria', '123.456.789-00', NULL, '1995-03-10', 'maria@email.com', 'hash', 'sal',

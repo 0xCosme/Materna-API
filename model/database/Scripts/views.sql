@@ -1,10 +1,4 @@
-<<<<<<< HEAD
-create view vwFilmes as 
 
-
-
-
-=======
 #ARQUIVO ReSPONSAVEL POR CRIAR A VIEW 
 #VIEW horarios
 create or replace view vw_horarios as
@@ -76,4 +70,8 @@ order by ch.dia, ch.horario;
 #select * from vw_horarios;                            -- todos
 #select * from vw_horarios where is_proximo = true;    -- só os próximos
 #select * from vw_horarios where id_doadora is null;   -- só os sem doadora
->>>>>>> 3b721849ec36dd1f116ff8ac24b88fcfd26c08f5
+
+
+
+
+

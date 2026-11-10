@@ -385,6 +385,8 @@ create table tbl_documento_doadora(
 create table tbl_codigo_envio(
     id                    int                     not null primary key auto_increment,
     codigo                int                     not null,
+    email                 varchar(255)            not null,
+    enviado               boolean                 not null default false,
     data_criacao          datetime                not null,
 
     id_doadora            int                     not null,
@@ -400,3 +402,8 @@ INSERT INTO tbl_status_agendamento (status) VALUES
 ('Pendente'),
 ('Aceito'),
 ('Recusado');
+
+
+preciso criar um microservisso em go Lang
+
+esse micro serviço deve olha o banco mysql com nome db_tech_bridge_materna
