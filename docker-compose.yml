@@ -1,0 +1,50 @@
+services:
+  database:
+    build: ./database
+    container_name: banco-materna
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p12345678 --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 30s
+    networks:
+      - materna-net
+
+  backend:
+    build: ./backend
+    container_name: backend-materna
+    ports:
+      - "9090:9090"
+    environment:
+      DB_HOST: database
+    depends_on:
+      database:
+        condition: service_healthy
+    networks:
+      - materna-net
+
+  frontend:
+    build: ./frontend
+    container_name: frontend-materna
+    ports:
+      - "80:5173"
+    environment:
+      CHOKIDAR_USEPOLLING: "true"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+    networks:
+      - materna-net
+
+volumes:
+  mysql_data:
+
+networks:
+  materna-net:
