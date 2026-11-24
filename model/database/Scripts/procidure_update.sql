@@ -337,21 +337,26 @@ DELIMITER ;
 ############################################################################################################################3
 
 #PROCIDURE RESPONSAVEL POR ATUALIZAR UM AGENDAMENTO PRA ACEITO OU RECUSADO
+DROP PROCEDURE IF EXISTS procatualizaragendamento;
+
 DELIMITER $$
 
 CREATE PROCEDURE procatualizaragendamento (
     IN p_id_agendamento         INT,
-    IN p_id_status_agendamento  INT
+    IN p_id_status_agendamento  INT,
+    IN p_id_doadora             INT
 )
 BEGIN
     DECLARE v_id_cadastro_horario INT;
     DECLARE v_id_status_atual     INT;
+    DECLARE v_id_doadora_agendamento INT;
     DECLARE v_disponivel          BOOLEAN;
 
     # Ids dos status (Pendente = 1, Aceito = 2, Recusado = 3)
     DECLARE v_id_status_pendente  INT DEFAULT 1;
     DECLARE v_id_status_aceito    INT DEFAULT 2;
     DECLARE v_id_status_recusado  INT DEFAULT 3;
+    DECLARE v_id_status_cancelado INT DEFAULT 4;
 
     # Se qualquer erro acontecer, desfaz tudo
     DECLARE EXIT HANDLER FOR SQLEXCEPTION
@@ -360,19 +365,25 @@ BEGIN
         RESIGNAL;
     END;
 
-    # So aceita Aceito ou Recusado
-    IF p_id_status_agendamento NOT IN (v_id_status_aceito, v_id_status_recusado) THEN
+    # Aceita transições para Aceito, Recusado ou Cancelado
+    IF p_id_status_agendamento NOT IN (
+        v_id_status_aceito,
+        v_id_status_recusado,
+        v_id_status_cancelado
+    ) THEN
         SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'Erro: o status deve ser Aceito ou Recusado.';
+        SET MESSAGE_TEXT = 'Erro: o status deve ser Aceito, Recusado ou Cancelado.';
     END IF;
 
     START TRANSACTION;
 
     # Busca o agendamento (trava a linha)
-    SELECT id_cadastro_horario, id_status_agendamento
-    INTO   v_id_cadastro_horario, v_id_status_atual
-    FROM tbl_agendamento
-    WHERE id = p_id_agendamento
+    SELECT ag.id_cadastro_horario, ag.id_status_agendamento, jd.id_doadora
+    INTO   v_id_cadastro_horario, v_id_status_atual, v_id_doadora_agendamento
+    FROM tbl_agendamento AS ag
+    INNER JOIN tbl_jornada_doacao AS jd
+        ON jd.id = ag.id_jornada_doacao
+    WHERE ag.id = p_id_agendamento
     FOR UPDATE;
 
     IF v_id_cadastro_horario IS NULL THEN
@@ -380,13 +391,13 @@ BEGIN
         SET MESSAGE_TEXT = 'Erro: agendamento nao encontrado.';
     END IF;
 
-    # So muda se estiver Pendente
-    IF v_id_status_atual <> v_id_status_pendente THEN
-        SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'Erro: so e possivel alterar agendamentos pendentes.';
-    END IF;
-
     IF p_id_status_agendamento = v_id_status_aceito THEN
+
+        # Aceite e recusa so podem ocorrer enquanto o agendamento estiver pendente
+        IF v_id_status_atual <> v_id_status_pendente THEN
+            SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Erro: so e possivel alterar agendamentos pendentes.';
+        END IF;
 
         # Trava o horario e confere se ainda esta disponivel
         SELECT disponivel INTO v_disponivel
@@ -408,12 +419,39 @@ BEGIN
         SET disponivel = FALSE
         WHERE id = v_id_cadastro_horario;
 
-    ELSE
+    ELSEIF p_id_status_agendamento = v_id_status_recusado THEN
+
+        IF v_id_status_atual <> v_id_status_pendente THEN
+            SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Erro: so e possivel alterar agendamentos pendentes.';
+        END IF;
 
         # Recusa (o horario continua disponivel)
         UPDATE tbl_agendamento
         SET id_status_agendamento = v_id_status_recusado
         WHERE id = p_id_agendamento;
+
+    ELSE
+
+        IF p_id_doadora IS NULL OR p_id_doadora <> v_id_doadora_agendamento THEN
+            SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Erro: agendamento nao encontrado.';
+        END IF;
+
+        IF v_id_status_atual NOT IN (v_id_status_pendente, v_id_status_aceito) THEN
+            SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Erro: somente agendamentos pendentes ou aceitos podem ser cancelados.';
+        END IF;
+
+        UPDATE tbl_agendamento
+        SET id_status_agendamento = v_id_status_cancelado
+        WHERE id = p_id_agendamento;
+
+        IF v_id_status_atual = v_id_status_aceito THEN
+            UPDATE tbl_cadastro_horario
+            SET disponivel = TRUE
+            WHERE id = v_id_cadastro_horario;
+        END IF;
 
     END IF;
 
@@ -428,8 +466,54 @@ END$$
 DELIMITER ;
 ############################################################################################
 
+DROP PROCEDURE IF EXISTS procaceitardocumentodoadora;
+DROP PROCEDURE IF EXISTS procrecusardocumentodoadora;
 
+DELIMITER $$
 
+CREATE PROCEDURE procaceitardocumentodoadora (
+    IN p_id_documento INT
+)
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1
+        FROM tbl_documento_doadora
+        WHERE id = p_id_documento
+    ) THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Documento nao encontrado.';
+    END IF;
 
+    UPDATE tbl_documento_doadora
+    SET id_status_documento = 2,
+        motivo_recusa = ''
+    WHERE id = p_id_documento;
+END$$
 
+CREATE PROCEDURE procrecusardocumentodoadora (
+    IN p_id_documento INT,
+    IN p_motivo_recusa VARCHAR(255)
+)
+BEGIN
+    IF p_motivo_recusa IS NULL OR TRIM(p_motivo_recusa) = '' THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'O motivo da recusa e obrigatorio.';
+    END IF;
 
+    IF NOT EXISTS (
+        SELECT 1
+        FROM tbl_documento_doadora
+        WHERE id = p_id_documento
+    ) THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Documento nao encontrado.';
+    END IF;
+
+    UPDATE tbl_documento_doadora
+    SET id_status_documento = 3,
+        motivo_recusa = TRIM(p_motivo_recusa)
+    WHERE id = p_id_documento;
+END$$
+
+DELIMITER ;
+############################################################################################

@@ -1,7 +1,6 @@
 #ARQUIVO RESPONSAVEL PELA CRIACAO DE TODAS PROCIDURE DE CADASTRO
 
 #CADASTRO DE DOADORA
-
 DELIMITER $$
 
 CREATE PROCEDURE proccadastrardoadora (
@@ -100,16 +99,6 @@ BEGIN
     # Devolve o id para o DAO (resultado[0][0].id_doadora)
     SELECT v_id_doadora AS id_doadora;
 END$$
-
-
-
-#CALL proccadastrardoadora(
-#    'Maria', '123.456.789-00', NULL, '1995-03-10', 'maria@email.com', 'hash', 'sal',
-#    '11999999999',
-#    'Rua A', '01001-000', 'Centro', '100', NULL, -23.55, -46.63,
-#    'São Paulo', 'SP',
-#    123456
-#);
 
 DELIMITER ;
 ########################################################################################
@@ -684,6 +673,5 @@ END$$
 
 DELIMITER ;
 ##############################################################################################################
-
 
 

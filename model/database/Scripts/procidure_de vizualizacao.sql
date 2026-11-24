@@ -1,4 +1,3 @@
-
 DELIMITER $$
 
 CREATE PROCEDURE procdoadorainstituicao (
@@ -16,7 +15,6 @@ BEGIN
         'Doadoras encontradas com sucesso' AS mensagem,
         COALESCE(JSON_ARRAYAGG(
             JSON_OBJECT(
-
                 # DADOS COMPLETOS DA DOADORA
                 'id',              d.id,
                 'nome',            d.nome,

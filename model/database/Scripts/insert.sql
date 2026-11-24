@@ -1,7 +1,20 @@
-#ARQUIVOS RESPONDSAVEL POR FAZER CADASTRO
+#ARQUIVO RESPONSAVEL POR FAZER CADASTRO
+use db_tech_bridge_materna;
 
-#######################################################
+-- ============================================================
+-- STATUS
+-- ============================================================
 
+INSERT INTO tbl_status_agendamento (id, status) VALUES
+(1, 'Pendente'),
+(2, 'Aceito'),
+(3, 'Recusado'),
+(4, 'Cancelado');
+
+INSERT INTO tbl_status_documento_doadora (id, status) VALUES
+(1, 'Pendente'),
+(2, 'Aceito'),
+(3, 'Recusado');
 
 
 -- ============================================================
@@ -21,7 +34,7 @@ INSERT INTO tbl_estado (id, sigla) VALUES
 INSERT INTO tbl_cidade (id, nome, id_estado) VALUES
 (1, 'São Paulo', 1),
 (2, 'Campinas', 1),
-(3, 'Rio de Janeiro', 2); 
+(3, 'Rio de Janeiro', 2);
 
 
 -- ============================================================
@@ -78,26 +91,9 @@ INSERT INTO tbl_tipo_coleta (id, tipo) VALUES
 INSERT INTO tbl_instituicao
 (id, nome, cnpj, email, foto, id_coleta, id_endereco)
 VALUES
-(1, 'Banco de Leite Central de São Paulo',
- '11.111.111/0001-11',
- 'contato@bancosp.com.br',
- 'banco-sp.jpg',
- 3,
- 1),
-
-(2, 'Banco de Leite Materno de Campinas',
- '22.222.222/0001-22',
- 'contato@bancocampinas.com.br',
- 'banco-campinas.jpg',
- 2,
- 2),
-
-(3, 'Banco de Leite Vida Nova',
- '33.333.333/0001-33',
- 'contato@bancovidanova.com.br',
- 'banco-vida-nova.jpg',
- 1,
- 3);
+(1, 'Banco de Leite Central de São Paulo', '11.111.111/0001-11', 'contato@bancosp.com.br', 'banco-sp.jpg', 3, 1),
+(2, 'Banco de Leite Materno de Campinas', '22.222.222/0001-22', 'contato@bancocampinas.com.br', 'banco-campinas.jpg', 2, 2),
+(3, 'Banco de Leite Vida Nova', '33.333.333/0001-33', 'contato@bancovidanova.com.br', 'banco-vida-nova.jpg', 1, 3);
 
 
 -- ============================================================
@@ -145,131 +141,48 @@ VALUES
 INSERT INTO tbl_jornada
 (id, is_ativo, nome, descricao, id_instituicao)
 VALUES
-(1, true,
- 'Jornada de Doação de Leite Materno - São Paulo',
- 'Processo completo para cadastro, avaliação e doação de leite materno.',
- 1),
-
-(2, true,
- 'Jornada de Doação de Leite Materno - Campinas',
- 'Processo completo para cadastro, avaliação e doação de leite materno.',
- 2),
-
-(3, true,
- 'Jornada de Doação de Leite Materno - Vida Nova',
- 'Processo completo para cadastro, avaliação e doação de leite materno.',
- 3);
+(1, true, 'Jornada de Doação de Leite Materno - São Paulo',
+ 'Processo completo para cadastro, avaliação e doação de leite materno.', 1),
+(2, true, 'Jornada de Doação de Leite Materno - Campinas',
+ 'Processo completo para cadastro, avaliação e doação de leite materno.', 2),
+(3, true, 'Jornada de Doação de Leite Materno - Vida Nova',
+ 'Processo completo para cadastro, avaliação e doação de leite materno.', 3);
 
 
 -- ============================================================
--- ETAPAS DA JORNADA 1
+-- ETAPAS (JORNADAS 1, 2 E 3)
 -- ============================================================
 
 INSERT INTO tbl_etapa
 (id, titulo, descricao, ordem, is_repetivel, is_agendavel,
  is_obrigatorio, is_solicita_arquivo, is_precisa_aprovacao, id_jornada)
 VALUES
-(1, 'Cadastro',
- 'Cadastro inicial da doadora.',
- 1, false, false, true, false, false, 1),
+-- JORNADA 1
+(1, 'Cadastro', 'Cadastro inicial da doadora.', 1, false, false, true, false, false, 1),
+(2, 'Triagem', 'Avaliação inicial da doadora.', 2, false, true, true, false, false, 1),
+(3, 'Conversa', 'Conversa com profissional do banco de leite.', 3, false, true, true, false, false, 1),
+(4, 'Exames', 'Realização e análise dos exames necessários.', 4, false, true, true, true, true, 1),
+(5, 'Avaliação', 'Avaliação dos resultados dos exames.', 5, false, true, true, true, true, 1),
+(6, 'Orientação', 'Orientações para ordenha e armazenamento.', 6, false, true, true, false, false, 1),
+(7, 'Doação de leite', 'Realização da doação de leite materno.', 7, true, true, true, false, false, 1),
 
-(2, 'Triagem',
- 'Avaliação inicial da doadora.',
- 2, false, true, true, false, false, 1),
+-- JORNADA 2
+(8, 'Cadastro', 'Cadastro inicial da doadora.', 1, false, false, true, false, false, 2),
+(9, 'Triagem', 'Avaliação inicial da doadora.', 2, false, true, true, false, false, 2),
+(10, 'Conversa', 'Conversa com profissional do banco de leite.', 3, false, true, true, false, false, 2),
+(11, 'Exames', 'Realização e análise dos exames necessários.', 4, false, true, true, true, true, 2),
+(12, 'Avaliação', 'Avaliação dos resultados dos exames.', 5, false, true, true, true, true, 2),
+(13, 'Orientação', 'Orientações para ordenha e armazenamento.', 6, false, true, true, false, false, 2),
+(14, 'Doação de leite', 'Realização da doação de leite materno.', 7, true, true, true, false, false, 2),
 
-(3, 'Conversa',
- 'Conversa com profissional do banco de leite.',
- 3, false, true, true, false, false, 1),
-
-(4, 'Exames',
- 'Realização e análise dos exames necessários.',
- 4, false, true, true, true, true, 1),
-
-(5, 'Avaliação',
- 'Avaliação dos resultados dos exames.',
- 5, false, true, true, true, true, 1),
-
-(6, 'Orientação',
- 'Orientações para ordenha e armazenamento.',
- 6, false, true, true, false, false, 1),
-
-(7, 'Doação de leite',
- 'Realização da doação de leite materno.',
- 7, true, true, true, false, false, 1);
-
-
--- ============================================================
--- ETAPAS DA JORNADA 2
--- ============================================================
-
-INSERT INTO tbl_etapa
-(id, titulo, descricao, ordem, is_repetivel, is_agendavel,
- is_obrigatorio, is_solicita_arquivo, is_precisa_aprovacao, id_jornada)
-VALUES
-(8, 'Cadastro',
- 'Cadastro inicial da doadora.',
- 1, false, false, true, false, false, 2),
-
-(9, 'Triagem',
- 'Avaliação inicial da doadora.',
- 2, false, true, true, false, false, 2),
-
-(10, 'Conversa',
- 'Conversa com profissional do banco de leite.',
- 3, false, true, true, false, false, 2),
-
-(11, 'Exames',
- 'Realização e análise dos exames necessários.',
- 4, false, true, true, true, true, 2),
-
-(12, 'Avaliação',
- 'Avaliação dos resultados dos exames.',
- 5, false, true, true, true, true, 2),
-
-(13, 'Orientação',
- 'Orientações para ordenha e armazenamento.',
- 6, false, true, true, false, false, 2),
-
-(14, 'Doação de leite',
- 'Realização da doação de leite materno.',
- 7, true, true, true, false, false, 2);
-
-
--- ============================================================
--- ETAPAS DA JORNADA 3
--- ============================================================
-
-INSERT INTO tbl_etapa
-(id, titulo, descricao, ordem, is_repetivel, is_agendavel,
- is_obrigatorio, is_solicita_arquivo, is_precisa_aprovacao, id_jornada)
-VALUES
-(15, 'Cadastro',
- 'Cadastro inicial da doadora.',
- 1, false, false, true, false, false, 3),
-
-(16, 'Triagem',
- 'Avaliação inicial da doadora.',
- 2, false, true, true, false, false, 3),
-
-(17, 'Conversa',
- 'Conversa com profissional do banco de leite.',
- 3, false, true, true, false, false, 3),
-
-(18, 'Exames',
- 'Realização e análise dos exames necessários.',
- 4, false, true, true, true, true, 3),
-
-(19, 'Avaliação',
- 'Avaliação dos resultados dos exames.',
- 5, false, true, true, true, true, 3),
-
-(20, 'Orientação',
- 'Orientações para ordenha e armazenamento.',
- 6, false, true, true, false, false, 3),
-
-(21, 'Doação de leite',
- 'Realização da doação de leite materno.',
- 7, true, true, true, false, false, 3);
+-- JORNADA 3
+(15, 'Cadastro', 'Cadastro inicial da doadora.', 1, false, false, true, false, false, 3),
+(16, 'Triagem', 'Avaliação inicial da doadora.', 2, false, true, true, false, false, 3),
+(17, 'Conversa', 'Conversa com profissional do banco de leite.', 3, false, true, true, false, false, 3),
+(18, 'Exames', 'Realização e análise dos exames necessários.', 4, false, true, true, true, true, 3),
+(19, 'Avaliação', 'Avaliação dos resultados dos exames.', 5, false, true, true, true, true, 3),
+(20, 'Orientação', 'Orientações para ordenha e armazenamento.', 6, false, true, true, false, false, 3),
+(21, 'Doação de leite', 'Realização da doação de leite materno.', 7, true, true, true, false, false, 3);
 
 
 -- ============================================================
@@ -277,256 +190,102 @@ VALUES
 -- ============================================================
 
 INSERT INTO tbl_doadora
-(id, nome, cpf, foto, data_nascimento, email, senha, sal,
+(id, nome, cpf, foto, data_nascimento, email, senha, sal, is_validado,
  id_endereco, id_telefone)
 VALUES
-
 -- BANCO 1
-(1, 'Maria Silva',
- '111.111.111-11',
- 'maria.jpg',
- '1992-05-10',
- 'maria@email.com',
- '123456',
- 'salt-maria',
- 4, 1),
-
-(2, 'Ana Oliveira',
- '222.222.222-22',
- 'ana.jpg',
- '1995-08-15',
- 'ana@email.com',
- '123456',
- 'salt-ana',
- 7, 2),
-
-(3, 'Carla Santos',
- '333.333.333-33',
- 'carla.jpg',
- '1998-02-20',
- 'carla@email.com',
- '123456',
- 'salt-carla',
- 1, 3),
+(1, 'Maria Silva',     '111.111.111-11', 'maria.jpg',     '1992-05-10', 'maria@email.com',     '123456', 'salt-maria',     true, 4, 1),
+(2, 'Ana Oliveira',    '222.222.222-22', 'ana.jpg',       '1995-08-15', 'ana@email.com',       '123456', 'salt-ana',       true, 7, 2),
+(3, 'Carla Santos',    '333.333.333-33', 'carla.jpg',     '1998-02-20', 'carla@email.com',     '123456', 'salt-carla',     true, 1, 3),
 
 -- BANCO 2
-(4, 'Juliana Costa',
- '444.444.444-44',
- 'juliana.jpg',
- '1991-03-12',
- 'juliana@email.com',
- '123456',
- 'salt-juliana',
- 5, 4),
-
-(5, 'Fernanda Lima',
- '555.555.555-55',
- 'fernanda.jpg',
- '1996-06-18',
- 'fernanda@email.com',
- '123456',
- 'salt-fernanda',
- 8, 5),
-
-(6, 'Beatriz Souza',
- '666.666.666-66',
- 'beatriz.jpg',
- '1999-11-25',
- 'beatriz@email.com',
- '123456',
- 'salt-beatriz',
- 2, 6),
+(4, 'Juliana Costa',   '444.444.444-44', 'juliana.jpg',   '1991-03-12', 'juliana@email.com',   '123456', 'salt-juliana',   true, 5, 4),
+(5, 'Fernanda Lima',   '555.555.555-55', 'fernanda.jpg',  '1996-06-18', 'fernanda@email.com',  '123456', 'salt-fernanda',  true, 8, 5),
+(6, 'Beatriz Souza',   '666.666.666-66', 'beatriz.jpg',   '1999-11-25', 'beatriz@email.com',   '123456', 'salt-beatriz',   true, 2, 6),
 
 -- BANCO 3
-(7, 'Camila Rodrigues',
- '777.777.777-77',
- 'camila.jpg',
- '1993-01-30',
- 'camila@email.com',
- '123456',
- 'salt-camila',
- 6, 7),
-
-(8, 'Daniela Martins',
- '888.888.888-88',
- 'daniela.jpg',
- '1997-09-09',
- 'daniela@email.com',
- '123456',
- 'salt-daniela',
- 9, 8),
-
-(9, 'Larissa Almeida',
- '999.999.999-99',
- 'larissa.jpg',
- '2000-12-01',
- 'larissa@email.com',
- '123456',
- 'salt-larissa',
- 3, 9);
+(7, 'Camila Rodrigues','777.777.777-77', 'camila.jpg',    '1993-01-30', 'camila@email.com',    '123456', 'salt-camila',    true, 6, 7),
+(8, 'Daniela Martins', '888.888.888-88', 'daniela.jpg',   '1997-09-09', 'daniela@email.com',   '123456', 'salt-daniela',   true, 9, 8),
+(9, 'Larissa Almeida', '999.999.999-99', 'larissa.jpg',   '2000-12-01', 'larissa@email.com',   '123456', 'salt-larissa',   true, 3, 9);
 
 
 -- ============================================================
--- CICLOS
+-- JORNADA DOAÇÃO (substitui tbl_ciclo + tbl_etapa_ciclo)
+-- uma linha por etapa; "ciclo" = número do ciclo da doadora
+-- encerrado = true nos ciclos já concluídos
 -- ============================================================
 
-INSERT INTO tbl_ciclo
-(id, numero_ciclo, is_concluido, id_jornada, id_doadora)
+INSERT INTO tbl_jornada_doacao
+(id, ciclo, data_conclusao, encerrado, id_etapa, id_doadora, id_instituicao, id_jornada)
 VALUES
 
--- MARIA - BANCO 1
-(1, 1, true, 1, 1),
-(2, 2, true, 1, 1),
-(3, 3, true, 1, 1),
-(4, 4, false, 1, 1),
+-- MARIA (doadora 1 / instituição 1 / jornada 1)
+-- Ciclos 1, 2 e 3: doações realizadas
+(1,  1, '2026-04-10', true,  7, 1, 1, 1),
+(2,  2, '2026-05-15', true,  7, 1, 1, 1),
+(3,  3, '2026-06-20', true,  7, 1, 1, 1),
+-- Ciclo 4: atual
+(4,  4, '2026-09-01', false, 1, 1, 1, 1),
+(5,  4, '2026-09-03', false, 2, 1, 1, 1),
+(6,  4, '2026-09-05', false, 3, 1, 1, 1),
+(7,  4, '2026-09-10', false, 4, 1, 1, 1),
+(8,  4, '2026-09-12', false, 5, 1, 1, 1),
+(9,  4, '2026-09-15', false, 6, 1, 1, 1),
+(10, 4, NULL,         false, 7, 1, 1, 1),
 
--- ANA - BANCO 1
-(5, 1, false, 1, 2),
+-- ANA (doadora 2 / instituição 1 / jornada 1) - em Orientação
+(11, 1, '2026-09-20', false, 1, 2, 1, 1),
+(12, 1, '2026-09-22', false, 2, 2, 1, 1),
+(13, 1, '2026-09-24', false, 3, 2, 1, 1),
+(14, 1, '2026-09-26', false, 4, 2, 1, 1),
+(15, 1, '2026-09-28', false, 5, 2, 1, 1),
+(16, 1, NULL,         false, 6, 2, 1, 1),
 
--- CARLA - BANCO 1
-(6, 1, false, 1, 3),
+-- JULIANA (doadora 4 / instituição 2 / jornada 2)
+-- Ciclos 1, 2 e 3: doações realizadas
+(17, 1, '2026-04-12', true,  14, 4, 2, 2),
+(18, 2, '2026-05-17', true,  14, 4, 2, 2),
+(19, 3, '2026-06-22', true,  14, 4, 2, 2),
+-- Ciclo 4: atual
+(20, 4, '2026-08-01', false, 8,  4, 2, 2),
+(21, 4, '2026-08-03', false, 9,  4, 2, 2),
+(22, 4, '2026-08-05', false, 10, 4, 2, 2),
+(23, 4, '2026-08-08', false, 11, 4, 2, 2),
+(24, 4, '2026-08-10', false, 12, 4, 2, 2),
+(25, 4, '2026-08-12', false, 13, 4, 2, 2),
+(26, 4, NULL,         false, 14, 4, 2, 2),
 
--- JULIANA - BANCO 2
-(7, 1, true, 2, 4),
-(8, 2, true, 2, 4),
-(9, 3, true, 2, 4),
-(10, 4, false, 2, 4),
+-- FERNANDA (doadora 5 / instituição 2 / jornada 2) - na Doação, com agendamento
+(27, 1, '2026-09-01', false, 8,  5, 2, 2),
+(28, 1, '2026-09-03', false, 9,  5, 2, 2),
+(29, 1, '2026-09-05', false, 10, 5, 2, 2),
+(30, 1, '2026-09-08', false, 11, 5, 2, 2),
+(31, 1, '2026-09-10', false, 12, 5, 2, 2),
+(32, 1, '2026-09-12', false, 13, 5, 2, 2),
+(33, 1, NULL,         false, 14, 5, 2, 2),
 
--- FERNANDA - BANCO 2
-(11, 1, false, 2, 5),
+-- CAMILA (doadora 7 / instituição 3 / jornada 3)
+-- Ciclos 1, 2 e 3: doações realizadas
+(34, 1, '2026-04-15', true,  21, 7, 3, 3),
+(35, 2, '2026-05-20', true,  21, 7, 3, 3),
+(36, 3, '2026-06-25', true,  21, 7, 3, 3),
+-- Ciclo 4: atual
+(37, 4, '2026-08-15', false, 15, 7, 3, 3),
+(38, 4, '2026-08-17', false, 16, 7, 3, 3),
+(39, 4, '2026-08-19', false, 17, 7, 3, 3),
+(40, 4, '2026-08-22', false, 18, 7, 3, 3),
+(41, 4, '2026-08-24', false, 19, 7, 3, 3),
+(42, 4, '2026-08-26', false, 20, 7, 3, 3),
+(43, 4, NULL,         false, 21, 7, 3, 3),
 
--- BEATRIZ - BANCO 2
-(12, 1, false, 2, 6),
+-- DANIELA (doadora 8 / instituição 3 / jornada 3) - em Exames
+(44, 1, '2026-09-15', false, 15, 8, 3, 3),
+(45, 1, '2026-09-17', false, 16, 8, 3, 3),
+(46, 1, '2026-09-19', false, 17, 8, 3, 3),
+(47, 1, NULL,         false, 18, 8, 3, 3);
 
--- CAMILA - BANCO 3
-(13, 1, true, 3, 7),
-(14, 2, true, 3, 7),
-(15, 3, true, 3, 7),
-(16, 4, false, 3, 7),
-
--- DANIELA - BANCO 3
-(17, 1, false, 3, 8),
-
--- LARISSA - BANCO 3
-(18, 1, false, 3, 9);
-
-
--- ============================================================
--- ETAPAS DA MARIA
--- CICLO 1, 2 E 3 = DOAÇÕES JÁ REALIZADAS
--- ============================================================
-
-INSERT INTO tbl_etapa_ciclo
-(id, data_conclusao, id_etapa, id_ciclo)
-VALUES
-(1, '2026-04-10', 7, 1),
-(2, '2026-05-15', 7, 2),
-(3, '2026-06-20', 7, 3),
-
--- CICLO 4 - TODAS AS ETAPAS ANTERIORES CONCLUÍDAS
-(4, '2026-09-01', 1, 4),
-(5, '2026-09-03', 2, 4),
-(6, '2026-09-05', 3, 4),
-(7, '2026-09-10', 4, 4),
-(8, '2026-09-12', 5, 4),
-(9, '2026-09-15', 6, 4),
-(10, NULL, 7, 4);
-
-
--- ============================================================
--- ANA
--- ESTÁ NA ETAPA ANTERIOR À DOAÇÃO
--- ============================================================
-
-INSERT INTO tbl_etapa_ciclo
-(id, data_conclusao, id_etapa, id_ciclo)
-VALUES
-(11, '2026-09-20', 1, 5),
-(12, '2026-09-22', 2, 5),
-(13, '2026-09-24', 3, 5),
-(14, '2026-09-26', 4, 5),
-(15, '2026-09-28', 5, 5),
-(16, NULL, 6, 5);
-
-
--- ============================================================
--- JULIANA
--- 3 DOAÇÕES REALIZADAS + 4ª DOAÇÃO ATUAL
--- ============================================================
-
-INSERT INTO tbl_etapa_ciclo
-(id, data_conclusao, id_etapa, id_ciclo)
-VALUES
-(17, '2026-04-12', 14, 7),
-(18, '2026-05-17', 14, 8),
-(19, '2026-06-22', 14, 9),
-
-(20, '2026-08-01', 8, 10),
-(21, '2026-08-03', 9, 10),
-(22, '2026-08-05', 10, 10),
-(23, '2026-08-08', 11, 10),
-(24, '2026-08-10', 12, 10),
-(25, '2026-08-12', 13, 10),
-(26, NULL, 14, 10);
-
-
--- ============================================================
--- FERNANDA
--- JÁ PASSOU POR TODAS AS ETAPAS E AGENDOU A DOAÇÃO
--- ============================================================
-
-INSERT INTO tbl_etapa_ciclo
-(id, data_conclusao, id_etapa, id_ciclo)
-VALUES
-(27, '2026-09-01', 8, 11),
-(28, '2026-09-03', 9, 11),
-(29, '2026-09-05', 10, 11),
-(30, '2026-09-08', 11, 11),
-(31, '2026-09-10', 12, 11),
-(32, '2026-09-12', 13, 11),
-(33, NULL, 14, 11);
-
-
--- ============================================================
--- CAMILA
--- 3 DOAÇÕES REALIZADAS + 4ª DOAÇÃO ATUAL
--- ============================================================
-
-INSERT INTO tbl_etapa_ciclo
-(id, data_conclusao, id_etapa, id_ciclo)
-VALUES
-(34, '2026-04-15', 21, 13),
-(35, '2026-05-20', 21, 14),
-(36, '2026-06-25', 21, 15),
-
-(37, '2026-08-15', 15, 16),
-(38, '2026-08-17', 16, 16),
-(39, '2026-08-19', 17, 16),
-(40, '2026-08-22', 18, 16),
-(41, '2026-08-24', 19, 16),
-(42, '2026-08-26', 20, 16),
-(43, NULL, 21, 16);
-
-
--- ============================================================
--- DANIELA
--- ESTÁ EM EXAMES
--- ============================================================
-
-INSERT INTO tbl_etapa_ciclo
-(id, data_conclusao, id_etapa, id_ciclo)
-VALUES
-(44, '2026-09-15', 15, 17),
-(45, '2026-09-17', 16, 17),
-(46, '2026-09-19', 17, 17),
-(47, NULL, 18, 17);
-
-
--- ============================================================
--- CARLA, BEATRIZ E LARISSA
--- NÃO POSSUEM REGISTRO EM tbl_etapa_ciclo
--- POIS AINDA NÃO INICIARAM A JORNADA
--- ============================================================
+-- Carla, Beatriz e Larissa não possuem registro em tbl_jornada_doacao
+-- pois ainda não iniciaram a jornada.
 
 
 -- ============================================================
@@ -534,123 +293,26 @@ VALUES
 -- ============================================================
 
 INSERT INTO tbl_cadastro_horario
-(id, dia, horario, id_etapa)
+(id, dia, horario, disponivel, id_etapa)
 VALUES
-(1, '2026-10-08', '09:00:00', 7),
-(2, '2026-10-08', '10:00:00', 7),
-(3, '2026-10-08', '14:00:00', 7),
+(1, '2026-10-08', '09:00:00', true,  7),
+(2, '2026-10-08', '10:00:00', true,  7),
+(3, '2026-10-08', '14:00:00', true,  7),
 
-(4, '2026-10-09', '09:00:00', 14),
-(5, '2026-10-09', '10:00:00', 14),
-(6, '2026-10-09', '14:00:00', 14),
+(4, '2026-10-09', '09:00:00', false, 14),  -- ocupado pela Fernanda
+(5, '2026-10-09', '10:00:00', true,  14),
+(6, '2026-10-09', '14:00:00', true,  14),
 
-(7, '2026-10-10', '09:00:00', 21),
-(8, '2026-10-10', '10:00:00', 21);
-
-
--- ============================================================
--- STATUS DE AGENDAMENTO
--- ============================================================
-
-INSERT INTO tbl_status_agendamento
-(id, status)
-VALUES
-(1, 'Agendado'),
-(2, 'Confirmado'),
-(3, 'Realizado'),
-(4, 'Cancelado'),
-(5, 'Não compareceu');
+(7, '2026-10-10', '09:00:00', true,  21),
+(8, '2026-10-10', '10:00:00', true,  21);
 
 
 -- ============================================================
 -- AGENDAMENTO DA FERNANDA
+-- jornada_doacao 33 = Fernanda / etapa Doação / ciclo 1
 -- ============================================================
 
 INSERT INTO tbl_agendamento
-(id, id_ciclo, id_cadastro_horario, id_status_agendamento)
+(id, id_jornada_doacao, id_cadastro_horario, id_status_agendamento)
 VALUES
-(1, 11, 4, 1);
-
-
--- ============================================================
--- RESUMO DOS DADOS
--- ============================================================
-
-/*
-BANCO 1 - SÃO PAULO
-
-Maria:
-    3 doações concluídas
-    4º ciclo atual
-    Todas as etapas anteriores concluídas
-    Está na Doação de leite
-
-Ana:
-    Está em Orientação
-    Todas as etapas anteriores concluídas
-    Próxima etapa = Doação
-
-Carla:
-    Não iniciou nenhuma etapa
-
-
-BANCO 2 - CAMPINAS
-
-Juliana:
-    3 doações concluídas
-    4º ciclo atual
-    Todas as etapas anteriores concluídas
-    Está na Doação de leite
-
-Fernanda:
-    Primeira doação
-    Todas as etapas anteriores concluídas
-    Está na Doação
-    Possui agendamento
-
-Beatriz:
-    Não iniciou nenhuma etapa
-
-
-BANCO 3 - VIDA NOVA
-
-Camila:
-    3 doações concluídas
-    4º ciclo atual
-    Todas as etapas anteriores concluídas
-    Está na Doação de leite
-
-Daniela:
-    Está em Exames
-
-Larissa:
-    Não iniciou nenhuma etapa
-
-
-REGRA:
-
-Somente "Doação de leite" possui is_repetivel = TRUE.
-
-As demais etapas NÃO são repetidas nos novos ciclos.
-
-Quando a doadora chega à Doação, todas as etapas
-anteriores já estão concluídas.
-
-Maria:
-    Ciclo 1 -> Doação concluída
-    Ciclo 2 -> Doação concluída
-    Ciclo 3 -> Doação concluída
-    Ciclo 4 -> Doação atual
-
-Juliana:
-    Ciclo 1 -> Doação concluída
-    Ciclo 2 -> Doação concluída
-    Ciclo 3 -> Doação concluída
-    Ciclo 4 -> Doação atual
-
-Camila:
-    Ciclo 1 -> Doação concluída
-    Ciclo 2 -> Doação concluída
-    Ciclo 3 -> Doação concluída
-    Ciclo 4 -> Doação atual
-/*
+(1, 33, 4, 1);
