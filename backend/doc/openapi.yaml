@@ -1,0 +1,3376 @@
+openapi: 3.0.3
+info:
+  title: Materna
+  description: API REST do projeto Materna para gerenciamento de doações de leite
+    materno, desenvolvida como parte do TCC
+  termsOfService: http://swagger.io/terms/
+  contact:
+    email: brunohaddadalves75@gmail.com
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  version: 1.0.4.26
+externalDocs:
+  description: Find out more about Swagger
+  url: http://swagger.io
+servers:
+- url: http://localhost:9090
+security:
+- bearerAuth: []
+paths:
+  /v1/materna/doadora:
+    post:
+      tags:
+      - Doadora
+      summary: Adiciona uma nova doadora
+      description: Endpoint para enviar os dados de uma doadora a ser cadastrada
+      security: []
+      requestBody:
+        description: JSON contendo os dados de uma doadora
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Doadora'
+      responses:
+        '201':
+          description: Doadora cadastrada com sucesso
+        '400':
+          description: Invalid input
+        '415':
+          description: Invalid Content-Type
+        '500':
+          description: Error Internal Server (Controller / Model)
+    get:
+      tags:
+      - Doadora
+      summary: Lista todas as doadoras
+      description: Listagem de todas as doadoras registradas no sistema
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Doadora'
+        '404':
+          description: Not Found
+        '500':
+          description: Error Internal Server (Controller / Model)
+  /v1/materna/jornada/doadora/me:
+    get:
+      tags:
+      - Jornada
+      summary: Lista as jornadas da doadora autenticada
+      responses:
+        '200':
+          description: Successful operation
+        '401':
+          description: Token ausente ou inválido
+  /v1/materna/jornada/instituicao/me:
+    get:
+      tags:
+      - Jornada
+      summary: Lista as jornadas da instituição autenticada
+      responses:
+        '200':
+          description: Successful operation
+        '401':
+          description: Token ausente ou inválido
+  /v1/materna/doadora/login:
+    post:
+      tags:
+      - Doadora
+      summary: Autentica uma doadora
+      description: Retorna um token JWT para a doadora.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - email
+              - senha
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: maria@email.com
+                senha:
+                  type: string
+                  format: password
+                  example: '123456'
+      responses:
+        '200':
+          description: Login realizado com sucesso
+        '401':
+          description: E-mail ou senha inválidos
+        '415':
+          description: Invalid Content-Type
+  /v1/materna/doadora/me:
+    get:
+      tags:
+      - Doadora
+      summary: Busca a doadora autenticada
+      description: Retorna os dados da doadora identificada pelo token JWT.
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Doadora'
+        '401':
+          description: Token ausente ou inválido
+    patch:
+      tags:
+      - Doadora
+      summary: Atualiza a foto da doadora autenticada
+      description: Atualiza a foto usando o ID da doadora presente no token JWT.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - foto
+              properties:
+                foto:
+                  type: string
+                  maxLength: 255
+                  example: https://exemplo.com/foto.jpg
+      responses:
+        '200':
+          description: Foto atualizada com sucesso
+        '400':
+          description: Foto inválida
+        '401':
+          description: Token ausente ou inválido
+        '415':
+          description: Invalid Content-Type
+  /v1/materna/doadora/otp/verificar:
+    post:
+      tags:
+      - Doadora
+      summary: Valida o código OTP da doadora
+      description: Confirma o código enviado para validar o cadastro da doadora.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - id_doadora
+              - codigo
+              properties:
+                id_doadora:
+                  type: integer
+                  example: 1
+                codigo:
+                  type: integer
+                  example: 123456
+      responses:
+        '200':
+          description: Conta validada com sucesso
+        '400':
+          description: Código inválido ou dados inválidos
+        '415':
+          description: Invalid Content-Type
+  /v1/materna/doadora/senha:
+    patch:
+      tags:
+      - Doadora
+      summary: Atualiza a senha da doadora
+      description: Atualiza a senha usando apenas o e-mail da doadora. Esta rota é pública.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - email
+              - senha
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: maria@email.com
+                senha:
+                  type: string
+                  format: password
+                  minLength: 6
+                  example: '123456'
+      responses:
+        '200':
+          description: Senha atualizada com sucesso
+        '400':
+          description: E-mail ou senha inválidos
+        '404':
+          description: Doadora não encontrada
+        '415':
+          description: Invalid Content-Type
+  /v1/materna/doadora/{id}:
+    get:
+      tags:
+      - Doadora
+      summary: Busca uma doadora pela ID
+      description: Retorna uma doadora pela ID
+      parameters:
+      - name: id
+        in: path
+        description: ID da doadora
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Doadora'
+        '400':
+          description: Invalid ID supplied
+        '404':
+          description: Not Found
+        '500':
+          description: Error Internal Server (Controller / Model)
+    put:
+      tags:
+      - Doadora
+      summary: Atualiza uma doadora pela ID
+      description: Buscar e atualizar uma doadora pela ID
+      parameters:
+      - name: id
+        in: path
+        description: ID da doadora
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        description: Dados para atualizar uma doadora
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Doadora'
+      responses:
+        '200':
+          description: Successful operation
+        '400':
+          description: Invalid ID supplied
+        '404':
+          description: Doadora not found
+        '415':
+          description: Invalid Content-Type
+        '500':
+          description: Error Internal Server (Controller / Model)
+    delete:
+      tags:
+      - Doadora
+      summary: Deletar uma doadora existente
+      description: Excluir uma doadora
+      parameters:
+      - name: id
+        in: path
+        description: ID da doadora
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Successful operation
+        '400':
+          description: Invalid ID supplied
+        '404':
+          description: Doadora not found
+        '500':
+          description: Error Internal Server (Controller / Model)
+  /v1/materna/funcionario:
+    post:
+      tags:
+      - Funcionário
+      summary: Adiciona um novo funcionário
+      description: Endpoint para enviar os dados de um funcionário a ser cadastrado
+      requestBody:
+        description: JSON contendo os dados de um funcionário
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Funcionario'
+      responses:
+        '201':
+          description: Funcionario cadastrado com sucesso
+        '400':
+          description: Invalid input
+        '415':
+          description: Invalid Content-Type
+        '500':
+          description: Error Internal Server (Controller / Model)
+    get:
+      tags:
+      - Funcionário
+      summary: Lista todos os funcionários
+      description: Listagem de todos os funcionários registrados no sistema
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Funcionario'
+        '404':
+          description: Not Found
+        '500':
+          description: Error Internal Server (Controller / Model)
+  /v1/materna/funcionario/{id}:
+    get:
+      tags:
+      - Funcionário
+      summary: Busca um funcionário pelo ID
+      description: Retorna um funcionário pelo ID
+      parameters:
+      - name: id
+        in: path
+        description: ID do funcionário
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Funcionario'
+        '400':
+          description: Invalid ID supplied
+        '404':
+          description: Not Found
+        '500':
+          description: Error Internal Server (Controller / Model)
+    put:
+      tags:
+      - Funcionário
+      summary: Atualiza um funcionário pelo ID
+      description: Buscar e atualizar um funcionário pelo ID
+      parameters:
+      - name: id
+        in: path
+        description: ID do funcionário
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        description: Dados para atualizar um funcionário
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Funcionario'
+      responses:
+        '200':
+          description: Successful operation
+        '400':
+          description: Invalid ID supplied
+        '404':
+          description: Funcionario not found
+        '415':
+          description: Invalid Content-Type
+        '500':
+          description: Error Internal Server (Controller / Model)
+    delete:
+      tags:
+      - Funcionário
+      summary: Deletar um funcionário existente
+      description: Excluir um funcionário
+      parameters:
+      - name: id
+        in: path
+        description: ID do funcionário
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Successful operation
+        '400':
+          description: Invalid ID supplied
+        '404':
+          description: Funcionario not found
+        '500':
+          description: Error Internal Server (Controller / Model)
+  /v1/materna/funcionario/instituicao/{id}:
+    get:
+      tags:
+      - Funcionário
+      summary: Lista funcionários de uma instituição
+      description: Retorna os funcionários vinculados à instituição informada
+      parameters:
+      - name: id
+        in: path
+        description: ID da instituição
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Funcionários encontrados
+        '400':
+          description: Invalid ID supplied
+        '404':
+          description: Not Found
+        '500':
+          description: Error Internal Server (Controller / Model)
+  /v1/materna/tipo-coleta:
+    post:
+      tags:
+      - Tipo de Coleta
+      summary: Adiciona um novo tipo de coleta
+      description: Endpoint para enviar os dados de um tipo de coleta a ser cadastrado
+      requestBody:
+        description: JSON contendo os dados de um tipo de coleta
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TipoColeta'
+      responses:
+        '201':
+          description: TipoColeta cadastrado com sucesso
+        '400':
+          description: Invalid input
+        '415':
+          description: Invalid Content-Type
+        '500':
+          description: Error Internal Server (Controller / Model)
+    get:
+      tags:
+      - Tipo de Coleta
+      summary: Lista todos os tipos de coleta
+      description: Listagem de todos os tipos de coleta registrados no sistema
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TipoColeta'
+        '404':
+          description: Not Found
+        '500':
+          description: Error Internal Server (Controller / Model)
+  /v1/materna/tipo-coleta/{id}:
+    get:
+      tags:
+      - Tipo de Coleta
+      summary: Busca um tipo de coleta pelo ID
+      description: Retorna um tipo de coleta pelo ID
+      parameters:
+      - name: id
+        in: path
+        description: ID do tipo de coleta
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TipoColeta'
+        '400':
+          description: Invalid ID supplied
+        '404':
+          description: Not Found
+        '500':
+          description: Error Internal Server (Controller / Model)
+    put:
+      tags:
+      - Tipo de Coleta
+      summary: Atualiza um tipo de coleta pelo ID
+      description: Buscar e atualizar um tipo de coleta pelo ID
+      parameters:
+      - name: id
+        in: path
+        description: ID do tipo de coleta
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        description: Dados para atualizar um tipo de coleta
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TipoColeta'
+      responses:
+        '200':
+          description: Successful operation
+        '400':
+          description: Invalid ID supplied
+        '404':
+          description: TipoColeta not found
+        '415':
+          description: Invalid Content-Type
+        '500':
+          description: Error Internal Server (Controller / Model)
+    delete:
+      tags:
+      - Tipo de Coleta
+      summary: Deletar um tipo de coleta existente
+      description: Excluir um tipo de coleta
+      parameters:
+      - name: id
+        in: path
+        description: ID do tipo de coleta
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Successful operation
+        '400':
+          description: Invalid ID supplied
+        '404':
+          description: TipoColeta not found
+        '500':
+          description: Error Internal Server (Controller / Model)
+  /v1/materna/instituicao:
+    get:
+      tags:
+      - Instituição
+      summary: Lista todas as instituições
+      description: Listagem pública de todas as instituições registradas no sistema
+      security: []
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Instituicao'
+        '404':
+          description: Not Found
+        '500':
+          description: Error Internal Server (Controller / Model)
+    post:
+      tags:
+      - Instituição
+      summary: Adiciona uma nova instituição
+      description: Endpoint para enviar os dados de uma instituição a ser cadastrada
+      security: []
+      requestBody:
+        description: JSON contendo os dados de uma instituição
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Instituicao'
+      responses:
+        '201':
+          description: Instituicao cadastrada com sucesso
+        '400':
+          description: Invalid input
+        '415':
+          description: Invalid Content-Type
+        '500':
+          description: Error Internal Server (Controller / Model)
+  /v1/materna/instituicao/{id}:
+    get:
+      tags:
+      - Instituição
+      summary: Busca uma instituição pela ID
+      description: Retorna os dados da instituição, suas jornadas e todas as informações das etapas de cada jornada
+      security: []
+      parameters:
+      - name: id
+        in: path
+        description: ID da instituição
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Instituicao'
+        '400':
+          description: Invalid ID supplied
+        '404':
+          description: Not Found
+        '500':
+          description: Error Internal Server (Controller / Model)
+    put:
+      tags:
+      - Instituição
+      summary: Atualiza uma instituição pela ID
+      description: Buscar e atualizar uma instituição pela ID
+      parameters:
+      - name: id
+        in: path
+        description: ID da instituição
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        description: Dados para atualizar uma instituição
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Instituicao'
+      responses:
+        '200':
+          description: Successful operation
+        '400':
+          description: Invalid ID supplied
+        '404':
+          description: Instituicao not found
+        '415':
+          description: Invalid Content-Type
+        '500':
+          description: Error Internal Server (Controller / Model)
+    delete:
+      tags:
+      - Instituição
+      summary: Deletar uma instituição existente
+      description: Excluir uma instituição
+      parameters:
+      - name: id
+        in: path
+        description: ID da instituição
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Successful operation
+        '400':
+          description: Invalid ID supplied
+        '404':
+          description: Instituicao not found
+        '500':
+          description: Error Internal Server (Controller / Model)
+  /v1/materna/instituicao/proximas:
+    get:
+      tags:
+      - Instituição
+      summary: Busca instituições próximas a um CEP
+      description: Retorna instituições ordenadas pela proximidade do CEP informado
+      parameters:
+      - name: cep
+        in: query
+        description: CEP de referência
+        required: true
+        schema:
+          type: string
+          example: 01246-000
+      responses:
+        '200':
+          description: Instituições próximas encontradas
+        '400':
+          description: CEP inválido ou não localizado
+        '404':
+          description: Not Found
+        '500':
+          description: Error Internal Server (Controller / Model)
+  /v1/materna/campanha:
+    post:
+      tags:
+      - Campanha
+      summary: Adiciona uma nova campanha
+      description: Endpoint para enviar os dados de uma campanha a ser cadastrada
+      requestBody:
+        description: JSON contendo os dados de uma campanha
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Campanha'
+      responses:
+        '201':
+          description: Campanha cadastrada com sucesso
+        '400':
+          description: Invalid input
+        '415':
+          description: Invalid Content-Type
+        '500':
+          description: Error Internal Server (Controller / Model)
+    get:
+      tags:
+      - Campanha
+      summary: Lista todas as campanhas
+      description: Listagem de todas as campanhas registradas no sistema
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Campanha'
+        '404':
+          description: Not Found
+        '500':
+          description: Error Internal Server (Controller / Model)
+  /v1/materna/campanha/{id}:
+    get:
+      tags:
+      - Campanha
+      summary: Busca uma campanha pela ID
+      description: Retorna uma campanha pela ID
+      parameters:
+      - name: id
+        in: path
+        description: ID da campanha
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Campanha'
+        '400':
+          description: Invalid ID supplied
+        '404':
+          description: Not Found
+        '500':
+          description: Error Internal Server (Controller / Model)
+    put:
+      tags:
+      - Campanha
+      summary: Atualiza uma campanha pela ID
+      description: Buscar e atualizar uma campanha pela ID
+      parameters:
+      - name: id
+        in: path
+        description: ID da campanha
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        description: Dados para atualizar uma campanha
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Campanha'
+      responses:
+        '200':
+          description: Successful operation
+        '400':
+          description: Invalid ID supplied
+        '404':
+          description: Campanha not found
+        '415':
+          description: Invalid Content-Type
+        '500':
+          description: Error Internal Server (Controller / Model)
+    delete:
+      tags:
+      - Campanha
+      summary: Deletar uma campanha existente
+      description: Excluir uma campanha
+      parameters:
+      - name: id
+        in: path
+        description: ID da campanha
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Successful operation
+        '400':
+          description: Invalid ID supplied
+        '404':
+          description: Campanha not found
+        '500':
+          description: Error Internal Server (Controller / Model)
+  /v1/materna/jornada:
+    post:
+      tags:
+      - Jornada
+      summary: Adiciona uma nova jornada
+      description: Endpoint para enviar os dados de uma jornada a ser cadastrada
+      requestBody:
+        description: JSON contendo os dados de uma jornada
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Jornada'
+      responses:
+        '201':
+          description: Jornada cadastrada com sucesso
+        '400':
+          description: Invalid input
+        '415':
+          description: Invalid Content-Type
+        '500':
+          description: Error Internal Server (Controller / Model)
+    get:
+      tags:
+      - Jornada
+      summary: Lista todas as jornadas
+      description: Listagem de todas as jornadas registradas no sistema
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Jornada'
+        '404':
+          description: Not Found
+        '500':
+          description: Error Internal Server (Controller / Model)
+  /v1/materna/jornada/instituicao/{id}:
+    get:
+      tags:
+      - Jornada
+      summary: Lista jornadas de uma instituição
+      description: Retorna as jornadas vinculadas à instituição informada
+      parameters:
+      - name: id
+        in: path
+        description: ID da instituição
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Jornadas encontradas
+        '400':
+          description: Invalid ID supplied
+        '404':
+          description: Not Found
+        '500':
+          description: Error Internal Server (Controller / Model)
+  /v1/materna/jornada/{id}:
+    get:
+      tags:
+      - Jornada
+      summary: Busca uma jornada pela ID
+      description: Retorna uma jornada pela ID
+      parameters:
+      - name: id
+        in: path
+        description: ID da jornada
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Jornada'
+        '400':
+          description: Invalid ID supplied
+        '404':
+          description: Not Found
+        '500':
+          description: Error Internal Server (Controller / Model)
+    put:
+      tags:
+      - Jornada
+      summary: Atualiza uma jornada pela ID
+      description: Buscar e atualizar uma jornada pela ID
+      parameters:
+      - name: id
+        in: path
+        description: ID da jornada
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        description: Dados para atualizar uma jornada
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Jornada'
+      responses:
+        '200':
+          description: Successful operation
+        '400':
+          description: Invalid ID supplied
+        '404':
+          description: Jornada not found
+        '415':
+          description: Invalid Content-Type
+        '500':
+          description: Error Internal Server (Controller / Model)
+    patch:
+      tags:
+      - Jornada
+      summary: Atualiza o status de uma jornada
+      description: Ativa ou desativa uma jornada pelo ID
+      parameters:
+      - name: id
+        in: path
+        description: ID da jornada
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        description: Novo status da jornada
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - is_ativo
+              properties:
+                is_ativo:
+                  type: boolean
+                  example: true
+      responses:
+        '200':
+          description: Jornada atualizada com sucesso
+        '400':
+          description: Invalid ID or status supplied
+        '404':
+          description: Jornada not found
+        '415':
+          description: Invalid Content-Type
+        '500':
+          description: Error Internal Server (Controller / Model)
+    delete:
+      tags:
+      - Jornada
+      summary: Deletar uma jornada existente
+      description: Exclui a jornada somente quando não existem vínculos com doadoras.
+      parameters:
+      - name: id
+        in: path
+        description: ID da jornada
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Successful operation
+        '400':
+          description: Invalid ID supplied
+        '404':
+          description: Jornada not found
+        '409':
+          description: A jornada possui vínculo com uma doadora
+        '500':
+          description: Error Internal Server (Controller / Model)
+  /v1/materna/etapa:
+    post:
+      tags:
+      - Etapa
+      summary: Adiciona uma nova etapa
+      description: Endpoint para enviar os dados de uma etapa a ser cadastrada
+      requestBody:
+        description: JSON contendo os dados de uma etapa
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Etapa'
+      responses:
+        '201':
+          description: Etapa cadastrada com sucesso
+        '400':
+          description: Invalid input
+        '415':
+          description: Invalid Content-Type
+        '500':
+          description: Error Internal Server (Controller / Model)
+    get:
+      tags:
+      - Etapa
+      summary: Lista todas as etapas
+      description: Listagem de todas as etapas registradas no sistema
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Etapa'
+        '404':
+          description: Not Found
+        '500':
+          description: Error Internal Server (Controller / Model)
+  /v1/materna/etapa/{id}:
+    get:
+      tags:
+      - Etapa
+      summary: Busca uma etapa pela ID
+      description: Retorna uma etapa pela ID
+      parameters:
+      - name: id
+        in: path
+        description: ID da etapa
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Etapa'
+        '400':
+          description: Invalid ID supplied
+        '404':
+          description: Not Found
+        '500':
+          description: Error Internal Server (Controller / Model)
+    put:
+      tags:
+      - Etapa
+      summary: Atualiza uma etapa pela ID
+      description: Buscar e atualizar uma etapa pela ID
+      parameters:
+      - name: id
+        in: path
+        description: ID da etapa
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        description: Dados para atualizar uma etapa
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Etapa'
+      responses:
+        '200':
+          description: Successful operation
+        '400':
+          description: Invalid ID supplied
+        '404':
+          description: Etapa not found
+        '415':
+          description: Invalid Content-Type
+        '500':
+          description: Error Internal Server (Controller / Model)
+    delete:
+      tags:
+      - Etapa
+      summary: Deletar uma etapa existente
+      description: Excluir uma etapa
+      parameters:
+      - name: id
+        in: path
+        description: ID da etapa
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Successful operation
+        '400':
+          description: Invalid ID supplied
+        '404':
+          description: Etapa not found
+        '500':
+          description: Error Internal Server (Controller / Model)
+  /v1/materna/ciclo:
+    post:
+      tags:
+      - Ciclo
+      summary: Adiciona um novo ciclo
+      description: Endpoint para enviar os dados de um ciclo a ser cadastrado
+      requestBody:
+        description: JSON contendo os dados de um ciclo
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Ciclo'
+      responses:
+        '201':
+          description: Ciclo cadastrado com sucesso
+        '400':
+          description: Invalid input
+        '415':
+          description: Invalid Content-Type
+        '500':
+          description: Error Internal Server (Controller / Model)
+    get:
+      tags:
+      - Ciclo
+      summary: Lista todos os ciclos
+      description: Listagem de todos os ciclos registrados no sistema
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Ciclo'
+        '404':
+          description: Not Found
+        '500':
+          description: Error Internal Server (Controller / Model)
+  /v1/materna/ciclo/{id}:
+    get:
+      tags:
+      - Ciclo
+      summary: Busca um ciclo pelo ID
+      description: Retorna um ciclo pelo ID
+      parameters:
+      - name: id
+        in: path
+        description: ID do ciclo
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ciclo'
+        '400':
+          description: Invalid ID supplied
+        '404':
+          description: Not Found
+        '500':
+          description: Error Internal Server (Controller / Model)
+    put:
+      tags:
+      - Ciclo
+      summary: Atualiza um ciclo pelo ID
+      description: Buscar e atualizar um ciclo pelo ID
+      parameters:
+      - name: id
+        in: path
+        description: ID do ciclo
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        description: Dados para atualizar um ciclo
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Ciclo'
+      responses:
+        '200':
+          description: Successful operation
+        '400':
+          description: Invalid ID supplied
+        '404':
+          description: Ciclo not found
+        '415':
+          description: Invalid Content-Type
+        '500':
+          description: Error Internal Server (Controller / Model)
+    delete:
+      tags:
+      - Ciclo
+      summary: Deletar um ciclo existente
+      description: Excluir um ciclo
+      parameters:
+      - name: id
+        in: path
+        description: ID do ciclo
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Successful operation
+        '400':
+          description: Invalid ID supplied
+        '404':
+          description: Ciclo not found
+        '500':
+          description: Error Internal Server (Controller / Model)
+  /v1/materna/etapa-ciclo:
+    post:
+      tags:
+      - Etapa do Ciclo
+      summary: Adiciona uma nova etapa de ciclo
+      description: Endpoint para enviar os dados de uma etapa de ciclo a ser cadastrada
+      requestBody:
+        description: JSON contendo os dados de uma etapa de ciclo
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EtapaCiclo'
+      responses:
+        '201':
+          description: EtapaCiclo cadastrada com sucesso
+        '400':
+          description: Invalid input
+        '415':
+          description: Invalid Content-Type
+        '500':
+          description: Error Internal Server (Controller / Model)
+    get:
+      tags:
+      - Etapa do Ciclo
+      summary: Lista todas as etapas de ciclo
+      description: Listagem de todas as etapas de ciclo registradas no sistema
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EtapaCiclo'
+        '404':
+          description: Not Found
+        '500':
+          description: Error Internal Server (Controller / Model)
+  /v1/materna/etapa-ciclo/{id}:
+    get:
+      tags:
+      - Etapa do Ciclo
+      summary: Busca uma etapa de ciclo pela ID
+      description: Retorna uma etapa de ciclo pela ID
+      parameters:
+      - name: id
+        in: path
+        description: ID da etapa de ciclo
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EtapaCiclo'
+        '400':
+          description: Invalid ID supplied
+        '404':
+          description: Not Found
+        '500':
+          description: Error Internal Server (Controller / Model)
+    put:
+      tags:
+      - Etapa do Ciclo
+      summary: Atualiza uma etapa de ciclo pela ID
+      description: Buscar e atualizar uma etapa de ciclo pela ID
+      parameters:
+      - name: id
+        in: path
+        description: ID da etapa de ciclo
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        description: Dados para atualizar uma etapa de ciclo
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EtapaCiclo'
+      responses:
+        '200':
+          description: Successful operation
+        '400':
+          description: Invalid ID supplied
+        '404':
+          description: EtapaCiclo not found
+        '415':
+          description: Invalid Content-Type
+        '500':
+          description: Error Internal Server (Controller / Model)
+    delete:
+      tags:
+      - Etapa do Ciclo
+      summary: Deletar uma etapa de ciclo existente
+      description: Excluir uma etapa de ciclo
+      parameters:
+      - name: id
+        in: path
+        description: ID da etapa de ciclo
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Successful operation
+        '400':
+          description: Invalid ID supplied
+        '404':
+          description: EtapaCiclo not found
+        '500':
+          description: Error Internal Server (Controller / Model)
+  /v1/materna/dashboard:
+    get:
+      tags:
+      - Dashboard
+      summary: Retorna os dados do dashboard institucional
+      description: Retorna os indicadores, agendamentos da semana, doadoras em jornada
+        e agenda do dia
+      parameters:
+      - name: data
+        in: query
+        description: Data de referência do dashboard
+        required: false
+        schema:
+          type: string
+          format: date
+          example: '2026-08-25'
+      responses:
+        '200':
+          description: Dashboard carregado com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dashboard'
+        '404':
+          description: Dados não encontrados
+        '500':
+          description: Error Internal Server
+  /v1/materna/vinculo-etapa-doadora/doadora/me:
+    get:
+      tags:
+      - Vínculo Etapa Doadora
+      summary: Lista as jornadas da doadora autenticada
+      responses:
+        '200':
+          description: Successful operation
+        '401':
+          description: Token ausente ou inválido
+  /v1/materna/agenda/resumo:
+    get:
+      tags:
+      - Agenda
+      summary: Retorna o resumo da agenda
+      description: Retorna os indicadores dos horários cadastrados e dos agendamentos
+        da semana
+      parameters:
+      - name: data_inicio
+        in: query
+        description: Data inicial do período
+        required: true
+        schema:
+          type: string
+          format: date
+          example: '2026-08-24'
+      - name: data_fim
+        in: query
+        description: Data final do período
+        required: true
+        schema:
+          type: string
+          format: date
+          example: '2026-08-28'
+      responses:
+        '200':
+          description: Resumo da agenda obtido com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResumoAgenda'
+        '404':
+          description: Nenhum horário encontrado no período informado
+        '500':
+          description: Error Internal Server
+  /v1/materna/horario:
+    post:
+      tags:
+      - Cadastro de Horário
+      summary: Adiciona um novo horário cadastrado
+      description: Endpoint para enviar os dados de um horário cadastrado a ser cadastrado
+      requestBody:
+        description: JSON contendo os dados de um horário cadastrado
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CadastroHorario'
+      responses:
+        '201':
+          description: CadastroHorario cadastrado com sucesso
+        '400':
+          description: Invalid input
+        '415':
+          description: Invalid Content-Type
+        '500':
+          description: Error Internal Server (Controller / Model)
+    get:
+      tags:
+      - Cadastro de Horário
+      summary: Lista todos os horários cadastrados
+      description: Retorna os horários registrados no sistema
+      responses:
+        '200':
+          description: Horários encontrados
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CadastroHorario'
+        '404':
+          description: Nenhum horário encontrado
+        '500':
+          description: Error Internal Server (Controller / Model)
+  /v1/materna/horario/agenda:
+    get:
+      tags:
+      - Cadastro de Horário
+      summary: Lista os horários da view vw_horarios
+      parameters:
+      - name: id_instituicao
+        in: query
+        description: Filtra os horários pela instituição
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+      - name: is_proximo
+        in: query
+        description: Retorna apenas horários futuros quando true
+        required: false
+        schema:
+          type: boolean
+      - name: id_doadora
+        in: query
+        description: Use null para retornar horários sem doadora vinculada
+        required: false
+        schema:
+          type: string
+          enum:
+          - "null"
+      responses:
+        '200':
+          description: Horários encontrados
+        '404':
+          description: Nenhum horário encontrado
+        '400':
+          description: ID da instituição inválido
+        '500':
+          description: Error Internal Server (Controller / Model)
+  /v1/materna/horario/instituicao/{id}:
+    get:
+      tags:
+      - Cadastro de Horário
+      summary: Lista horários de uma instituição
+      description: Retorna horários vinculados às jornadas da instituição informada
+      parameters:
+      - name: id
+        in: path
+        description: ID da instituição
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Horários encontrados
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CadastroHorario'
+        '400':
+          description: Invalid ID supplied
+        '404':
+          description: Not Found
+        '500':
+          description: Error Internal Server (Controller / Model)
+  /v1/materna/horario/{id}:
+    get:
+      tags:
+      - Cadastro de Horário
+      summary: Busca um horário cadastrado pelo ID
+      description: Retorna um horário cadastrado pelo ID
+      parameters:
+      - name: id
+        in: path
+        description: ID do horário cadastrado
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CadastroHorario'
+        '400':
+          description: Invalid ID supplied
+        '404':
+          description: Not Found
+        '500':
+          description: Error Internal Server (Controller / Model)
+    put:
+      tags:
+      - Cadastro de Horário
+      summary: Atualiza um horário cadastrado pelo ID
+      description: Buscar e atualizar um horário cadastrado pelo ID
+      parameters:
+      - name: id
+        in: path
+        description: ID do horário cadastrado
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        description: Dados para atualizar um horário cadastrado
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CadastroHorario'
+      responses:
+        '200':
+          description: Successful operation
+        '400':
+          description: Invalid ID supplied
+        '404':
+          description: CadastroHorario not found
+        '415':
+          description: Invalid Content-Type
+        '500':
+          description: Error Internal Server (Controller / Model)
+    delete:
+      tags:
+      - Cadastro de Horário
+      summary: Deletar um horário cadastrado existente
+      description: Excluir um horário cadastrado
+      parameters:
+      - name: id
+        in: path
+        description: ID do horário cadastrado
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Successful operation
+        '400':
+          description: Invalid ID supplied
+        '404':
+          description: CadastroHorario not found
+        '500':
+          description: Error Internal Server (Controller / Model)
+  /v1/materna/vinculo-etapa-doadora:
+    post:
+      tags:
+      - Vínculo Etapa-Doadora
+      summary: Vincula uma doadora a uma etapa
+      description: Cria um vínculo entre a doadora, a etapa, a instituição e a jornada informadas
+      requestBody:
+        description: Identificadores da doadora, da etapa, da instituição e da jornada
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - id_doadora
+              - id_etapa
+              - id_instituicao
+              - id_jornada
+              properties:
+                id_doadora:
+                  type: integer
+                  example: 1
+                id_etapa:
+                  type: integer
+                  example: 1
+                id_instituicao:
+                  type: integer
+                  example: 1
+                id_jornada:
+                  type: integer
+                  example: 1
+      responses:
+        '201':
+          description: Vínculo criado com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id_doadora:
+                    type: integer
+                    example: 1
+                  id_etapa:
+                    type: integer
+                    example: 1
+                  id_instituicao:
+                    type: integer
+                    example: 1
+                  id_jornada:
+                    type: integer
+                    example: 1
+                  id:
+                    type: integer
+                    description: ID gerado para o vínculo da jornada de doação
+                    example: 10
+        '400':
+          description: Dados inválidos
+        '404':
+          description: Doadora, etapa, instituição ou jornada não encontrada
+        '415':
+          description: Invalid Content-Type
+        '500':
+          description: Error Internal Server (Controller / Model)
+  /v1/materna/vinculo-etapa-doadora/doadora/{id}:
+    get:
+      tags:
+      - Vínculo Etapa-Doadora
+      summary: Lista as jornadas ativas e etapas de uma doadora
+      description: Retorna as especificações de cada jornada ativa da doadora, o progresso das etapas e os vínculos registrados. Em etapas repetíveis, ciclo indica a quantidade restante.
+      parameters:
+      - name: id
+        in: path
+        description: ID da doadora
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Jornadas ativas da doadora
+        '400':
+          description: ID da doadora inválido
+        '404':
+          description: Doadora não encontrada
+        '500':
+          description: Error Internal Server (Controller / Model)
+  /v1/materna/vinculo-etapa-doadora/{id}/ciclos:
+    patch:
+      tags:
+      - Vínculo Etapa-Doadora
+      summary: Define a quantidade de ciclos de uma etapa repetível
+      description: Define o total de ciclos antes da primeira conclusão. O valor fica no campo ciclo do vínculo e não pode ser alterado após iniciar as conclusões.
+      parameters:
+      - name: id
+        in: path
+        description: ID do vínculo etapa-doadora
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        description: Quantidade total planejada de ciclos
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - quantidade_ciclos
+              properties:
+                quantidade_ciclos:
+                  type: integer
+                  minimum: 1
+                  example: 6
+      responses:
+        '200':
+          description: Quantidade de ciclos definida
+        '400':
+          description: ID, quantidade ou etapa inválida
+        '404':
+          description: Vínculo não encontrado
+        '409':
+          description: Quantidade já definida por conclusões anteriores
+        '415':
+          description: Tipo de conteúdo inválido
+        '500':
+          description: Erro interno do servidor (controller/model)
+  /v1/materna/vinculo-etapa-doadora/{id}/concluir:
+    patch:
+      tags:
+      - Vínculo Etapa-Doadora
+      summary: Conclui um ciclo da etapa repetível
+      description: Decrementa em um o campo ciclo do mesmo vínculo e grava a data de conclusão. Marca o vínculo como encerrado quando não restarem ciclos.
+      parameters:
+      - name: id
+        in: path
+        description: ID do vínculo etapa-doadora
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Ciclo concluído
+        '400':
+          description: ID ou etapa inválida
+        '404':
+          description: Vínculo não encontrado
+        '409':
+          description: Quantidade de ciclos não definida ou todos os ciclos já concluídos
+        '500':
+          description: Erro interno do servidor (controller/model)
+  /v1/materna/vinculo-etapa-doadora/{id}:
+    patch:
+      tags:
+      - Vínculo Etapa-Doadora
+      summary: Atualiza a data de conclusão de uma etapa não repetível
+      description: Define ou remove a data de conclusão de uma etapa não repetível. Etapas repetíveis devem usar a rota específica de conclusão de ciclos.
+      parameters:
+      - name: id
+        in: path
+        description: ID do vínculo etapa-doadora
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        description: Data de conclusão ou null para removê-la
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - data_conclusao
+              properties:
+                data_conclusao:
+                  type: string
+                  format: date
+                  nullable: true
+                  example: '2026-11-05'
+      responses:
+        '200':
+          description: Data de conclusão atualizada
+        '400':
+          description: ID ou data inválida
+        '415':
+          description: Invalid Content-Type
+        '500':
+          description: Error Internal Server (Controller / Model)
+  /v1/materna/documento/{id_jornada_doacao}:
+    post:
+      tags:
+      - Documento da Doadora
+      summary: Envia um documento para a jornada de doação
+      description: Registra o documento como pendente se a etapa exige aprovação; caso contrário, como aceito
+      parameters:
+      - name: id_jornada_doacao
+        in: path
+        description: ID da jornada de doação
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        description: Documento e ID da doadora
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - id_doadora
+              - documento
+              properties:
+                id_doadora:
+                  type: integer
+                  example: 1
+                documento:
+                  type: string
+                  maxLength: 255
+                  example: https://exemplo.com/documento.pdf
+      responses:
+        '201':
+          description: Documento registrado com sucesso
+        '400':
+          description: ID ou documento inválido
+        '404':
+          description: Vínculo não encontrado
+        '415':
+          description: Invalid Content-Type
+        '500':
+          description: Error Internal Server (Controller / Model)
+  /v1/materna/documento/{id_documento}/recusar:
+    patch:
+      tags:
+      - Documento da Doadora
+      summary: Recusa um documento da doadora
+      description: Recusa o documento e registra o motivo
+      parameters:
+      - name: id_documento
+        in: path
+        description: ID do documento da doadora
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        description: Motivo obrigatório da recusa
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - motivo_recusa
+              properties:
+                motivo_recusa:
+                  type: string
+                  maxLength: 255
+                  example: Documento ilegível; envie uma nova imagem.
+      responses:
+        '200':
+          description: Documento recusado com sucesso
+        '400':
+          description: ID ou motivo inválido
+        '404':
+          description: Documento não encontrado
+        '415':
+          description: Invalid Content-Type
+        '500':
+          description: Error Internal Server (Controller / Model)
+  /v1/materna/documento/{id_documento}/aceitar:
+    patch:
+      tags:
+      - Documento da Doadora
+      summary: Aceita um documento
+      parameters:
+      - name: id_documento
+        in: path
+        description: ID do documento da doadora
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Documento aceito com sucesso
+        '400':
+          description: ID inválido
+        '404':
+          description: Documento não encontrado
+        '500':
+          description: Error Internal Server (Controller / Model)
+  /v1/materna/status-agendamento:
+    post:
+      tags:
+      - Status do Agendamento
+      summary: Adiciona um novo status de agendamento
+      description: Endpoint para enviar os dados de um status de agendamento a ser
+        cadastrado
+      requestBody:
+        description: JSON contendo os dados de um status de agendamento
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StatusAgendamento'
+      responses:
+        '201':
+          description: StatusAgendamento cadastrado com sucesso
+        '400':
+          description: Invalid input
+        '415':
+          description: Invalid Content-Type
+        '500':
+          description: Error Internal Server (Controller / Model)
+    get:
+      tags:
+      - Status do Agendamento
+      summary: Lista todos os status de agendamento
+      description: Listagem de todos os status de agendamento registrados no sistema
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StatusAgendamento'
+        '404':
+          description: Not Found
+        '500':
+          description: Error Internal Server (Controller / Model)
+  /v1/materna/status-agendamento/{id}:
+    get:
+      tags:
+      - Status do Agendamento
+      summary: Busca um status de agendamento pelo ID
+      description: Retorna um status de agendamento pelo ID
+      parameters:
+      - name: id
+        in: path
+        description: ID do status de agendamento
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusAgendamento'
+        '400':
+          description: Invalid ID supplied
+        '404':
+          description: Not Found
+        '500':
+          description: Error Internal Server (Controller / Model)
+    put:
+      tags:
+      - Status do Agendamento
+      summary: Atualiza um status de agendamento pelo ID
+      description: Buscar e atualizar um status de agendamento pelo ID
+      parameters:
+      - name: id
+        in: path
+        description: ID do status de agendamento
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        description: Dados para atualizar um status de agendamento
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StatusAgendamento'
+      responses:
+        '200':
+          description: Successful operation
+        '400':
+          description: Invalid ID supplied
+        '404':
+          description: StatusAgendamento not found
+        '415':
+          description: Invalid Content-Type
+        '500':
+          description: Error Internal Server (Controller / Model)
+    delete:
+      tags:
+      - Status do Agendamento
+      summary: Deletar um status de agendamento existente
+      description: Excluir um status de agendamento
+      parameters:
+      - name: id
+        in: path
+        description: ID do status de agendamento
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Successful operation
+        '400':
+          description: Invalid ID supplied
+        '404':
+          description: StatusAgendamento not found
+        '500':
+          description: Error Internal Server (Controller / Model)
+  /v1/materna/agendamento:
+    get:
+      tags:
+      - Agendamento
+      summary: Lista os atendimentos da agenda
+      description: Retorna todos os agendamentos com horário, doadora, etapa e status
+      responses:
+        '200':
+          description: Atendimentos encontrados
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgendamentosResponse'
+        '404':
+          description: Nenhum atendimento encontrado
+        '500':
+          description: Error Internal Server (Controller / Model)
+    post:
+      tags:
+      - Agendamento
+      summary: Adiciona um novo agendamento
+      description: Cria um novo agendamento para um horário disponível. O novo registro deve usar o status Pendente (1). Um agendamento recusado permanece no histórico e não pode ser reativado; para usar novamente o horário, crie outro agendamento.
+      requestBody:
+        description: Dados do horário, da jornada de doação e do status inicial do agendamento
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Agendamento'
+      responses:
+        '201':
+          description: Agendamento cadastrado com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 201
+                  message:
+                    type: string
+                    example: Item inserido com sucesso
+                  response:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        example: 10
+                      id_cadastro_horario:
+                        type: integer
+                        example: 3
+                      id_jornada_doacao:
+                        type: integer
+                        example: 5
+                      id_status_agendamento:
+                        type: integer
+                        example: 1
+        '400':
+          description: Dados inválidos, etapa sem permissão para agendamento ou horário indisponível
+        '404':
+          description: Jornada de doação ou horário não encontrado
+        '415':
+          description: Invalid Content-Type
+        '500':
+          description: Error Internal Server (Controller / Model)
+  /v1/materna/agendamento/instituicao/me:
+    get:
+      tags:
+      - Agendamento
+      summary: Lista os agendamentos da instituição autenticada
+      description: Retorna somente os agendamentos vinculados à instituição do token JWT.
+      responses:
+        '200':
+          description: Agendamentos encontrados
+        '401':
+          description: Token ausente ou inválido
+        '404':
+          description: Nenhum agendamento encontrado
+  /v1/materna/agendamento/doadora/{id}:
+    get:
+      tags:
+      - Agendamento
+      summary: Lista os agendamentos de uma doadora
+      description: Retorna os agendamentos vinculados à doadora informada
+      parameters:
+      - name: id
+        in: path
+        description: ID da doadora
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Agendamentos encontrados
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgendamentosResponse'
+        '400':
+          description: ID da doadora inválido
+        '404':
+          description: Nenhum agendamento encontrado para a doadora
+        '500':
+          description: Error Internal Server (Controller / Model)
+  /v1/materna/agendamento/{id}:
+    put:
+      tags:
+      - Agendamento
+      summary: Atualiza o status de um agendamento
+      description: "Aceitar (2) ou recusar (3) só é permitido para agendamentos pendentes. Ao aceitar, o horário fica indisponível; ao recusar, permanece disponível. O registro recusado continua no histórico e não pode ser aceito depois; para usar o horário novamente, crie outro pela rota POST /v1/materna/agendamento. A doadora proprietária pode cancelar (4) um agendamento pendente ou aceito; se aceito, o horário volta a ficar disponível."
+      parameters:
+      - name: id
+        in: path
+        description: ID do agendamento
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        description: Novo status do agendamento
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              oneOf:
+              - type: object
+                required:
+                - id_status_agendamento
+                properties:
+                  id_status_agendamento:
+                    type: integer
+                    enum: [2, 3]
+                    description: 2 para aceitar ou 3 para recusar um agendamento pendente
+              - type: object
+                required:
+                - id_status_agendamento
+                - id_doadora
+                properties:
+                  id_status_agendamento:
+                    type: integer
+                    enum: [4]
+                    description: 4 para cancelar um agendamento próprio pendente ou aceito
+                  id_doadora:
+                    type: integer
+                    minimum: 1
+                    description: ID da doadora proprietária do agendamento
+                    example: 1
+            examples:
+              aceitar:
+                summary: Aceitar um agendamento pendente
+                value:
+                  id_status_agendamento: 2
+              recusar:
+                summary: Recusar um agendamento pendente
+                value:
+                  id_status_agendamento: 3
+              cancelar:
+                summary: Cancelar um agendamento próprio
+                value:
+                  id_status_agendamento: 4
+                  id_doadora: 1
+      responses:
+        '200':
+          description: Status do agendamento atualizado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  status_code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: Item atualizado com sucesso!
+                  response:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        example: 10
+                      id_status_agendamento:
+                        type: integer
+                        enum: [2, 3, 4]
+                        example: 2
+                      id_doadora:
+                        type: integer
+                        description: Retornado quando o status é Cancelado
+                        example: 1
+        '400':
+          description: ID ou status inválido, transição não permitida ou id_doadora inválido para cancelamento
+        '404':
+          description: Agendamento não encontrado
+        '415':
+          description: Invalid Content-Type
+        '500':
+          description: Error Internal Server (Controller / Model)
+  /v1/materna/documento-instituicao:
+    post:
+      tags:
+      - Documento Instituição
+      summary: Adiciona um novo documento de instituição
+      description: Endpoint para enviar os dados de um documento de instituição a
+        ser cadastrado
+      requestBody:
+        description: JSON contendo os dados de um documento de instituição
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DocumentoInstituicao'
+      responses:
+        '201':
+          description: DocumentoInstituicao cadastrado com sucesso
+        '400':
+          description: Invalid input
+        '415':
+          description: Invalid Content-Type
+        '500':
+          description: Error Internal Server (Controller / Model)
+    get:
+      tags:
+      - Documento Instituição
+      summary: Lista todos os documentos de instituição
+      description: Listagem de todos os documentos de instituição registrados no sistema
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DocumentoInstituicao'
+        '404':
+          description: Not Found
+        '500':
+          description: Error Internal Server (Controller / Model)
+  /v1/materna/documento-instituicao/{id}:
+    get:
+      tags:
+      - Documento Instituição
+      summary: Busca um documento de instituição pelo ID
+      description: Retorna um documento de instituição pelo ID
+      parameters:
+      - name: id
+        in: path
+        description: ID do documento de instituição
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentoInstituicao'
+        '400':
+          description: Invalid ID supplied
+        '404':
+          description: Not Found
+        '500':
+          description: Error Internal Server (Controller / Model)
+    put:
+      tags:
+      - Documento Instituição
+      summary: Atualiza um documento de instituição pelo ID
+      description: Buscar e atualizar um documento de instituição pelo ID
+      parameters:
+      - name: id
+        in: path
+        description: ID do documento de instituição
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        description: Dados para atualizar um documento de instituição
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DocumentoInstituicao'
+      responses:
+        '200':
+          description: Successful operation
+        '400':
+          description: Invalid ID supplied
+        '404':
+          description: DocumentoInstituicao not found
+        '415':
+          description: Invalid Content-Type
+        '500':
+          description: Error Internal Server (Controller / Model)
+    delete:
+      tags:
+      - Documento Instituição
+      summary: Deletar um documento de instituição existente
+      description: Excluir um documento de instituição
+      parameters:
+      - name: id
+        in: path
+        description: ID do documento de instituição
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Successful operation
+        '400':
+          description: Invalid ID supplied
+        '404':
+          description: DocumentoInstituicao not found
+        '500':
+          description: Error Internal Server (Controller / Model)
+  /v1/materna/documento-doadora:
+    post:
+      tags:
+      - Documento Doadora
+      summary: Adiciona um novo documento de doadora
+      description: Endpoint para enviar os dados de um documento de doadora a ser
+        cadastrado
+      requestBody:
+        description: JSON contendo os dados de um documento de doadora
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DocumentoDoadora'
+      responses:
+        '201':
+          description: DocumentoDoadora cadastrado com sucesso
+        '400':
+          description: Invalid input
+        '415':
+          description: Invalid Content-Type
+        '500':
+          description: Error Internal Server (Controller / Model)
+    get:
+      tags:
+      - Documento Doadora
+      summary: Lista todos os documentos de doadora
+      description: Listagem de todos os documentos de doadora registrados no sistema
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DocumentoDoadora'
+        '404':
+          description: Not Found
+        '500':
+          description: Error Internal Server (Controller / Model)
+  /v1/materna/documento-doadora/{id}:
+    get:
+      tags:
+      - Documento Doadora
+      summary: Busca um documento de doadora pelo ID
+      description: Retorna um documento de doadora pelo ID
+      parameters:
+      - name: id
+        in: path
+        description: ID do documento de doadora
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentoDoadora'
+        '400':
+          description: Invalid ID supplied
+        '404':
+          description: Not Found
+        '500':
+          description: Error Internal Server (Controller / Model)
+    put:
+      tags:
+      - Documento Doadora
+      summary: Atualiza um documento de doadora pelo ID
+      description: Buscar e atualizar um documento de doadora pelo ID
+      parameters:
+      - name: id
+        in: path
+        description: ID do documento de doadora
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        description: Dados para atualizar um documento de doadora
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DocumentoDoadora'
+      responses:
+        '200':
+          description: Successful operation
+        '400':
+          description: Invalid ID supplied
+        '404':
+          description: DocumentoDoadora not found
+        '415':
+          description: Invalid Content-Type
+        '500':
+          description: Error Internal Server (Controller / Model)
+    delete:
+      tags:
+      - Documento Doadora
+      summary: Deletar um documento de doadora existente
+      description: Excluir um documento de doadora
+      parameters:
+      - name: id
+        in: path
+        description: ID do documento de doadora
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Successful operation
+        '400':
+          description: Invalid ID supplied
+        '404':
+          description: DocumentoDoadora not found
+        '500':
+          description: Error Internal Server (Controller / Model)
+  /v1/materna/doadora/{doadora_id}/jornada/{jornada_id}:
+    post:
+      tags:
+      - Doadora
+      summary: Seleciona o banco de leite para a jornada
+      description: Vincula a doadora à jornada escolhida, permitindo iniciar a jornada
+        no banco de leite selecionado.
+      parameters:
+      - name: doadora_id
+        in: path
+        description: ID da doadora
+        required: true
+        schema:
+          type: integer
+          format: int64
+      - name: jornada_id
+        in: path
+        description: ID da jornada do banco de leite escolhido
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '201':
+          description: Banco de leite selecionado e jornada iniciada com sucesso
+        '400':
+          description: IDs inválidos ou dados inválidos
+        '404':
+          description: Doadora ou jornada não encontrada
+        '500':
+          description: Error Internal Server
+  /v1/materna/doadora/{doadora_id}/doacoes-realizadas:
+    get:
+      tags:
+      - Doação
+      summary: Lista as doações realizadas por uma doadora
+      description: Retorna as doações concluídas da doadora a partir dos ciclos e
+        etapas de ciclo registrados.
+      parameters:
+      - name: doadora_id
+        in: path
+        description: ID da doadora
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        '200':
+          description: Doações realizadas encontradas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DoacaoRealizada'
+        '404':
+          description: Nenhuma doação realizada encontrada
+        '500':
+          description: Error Internal Server
+  /v1/materna/funcionario/instituicao/me:
+    get:
+      tags:
+      - Funcionário
+      summary: Lista os funcionários da instituição autenticada
+      description: Retorna os funcionários da instituição vinculada ao token JWT.
+      responses:
+        '200':
+          description: Successful operation
+        '401':
+          description: Token ausente ou inválido
+  /v1/materna/funcionario/login:
+    post:
+      tags:
+      - Funcionário
+      summary: Autentica um funcionário
+      description: Retorna um token JWT para o funcionário.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - email
+              - senha
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: funcionario@email.com
+                senha:
+                  type: string
+                  format: password
+                  example: '123456'
+      responses:
+        '200':
+          description: Login realizado com sucesso
+        '401':
+          description: E-mail ou senha inválidos
+        '415':
+          description: Invalid Content-Type
+  /v1/materna/instituicao/me:
+    get:
+      tags:
+      - Instituição
+      summary: Busca a instituição autenticada
+      description: Retorna a instituição identificada pelo token JWT.
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Instituicao'
+        '401':
+          description: Token ausente ou inválido
+  /v1/materna/horario/instituicao/me:
+    get:
+      tags:
+      - Horário
+      summary: Lista os horários da instituição autenticada
+      responses:
+        '200':
+          description: Successful operation
+        '401':
+          description: Token ausente ou inválido
+  /v1/materna/agendamento/doadora/me:
+    get:
+      tags:
+      - Agendamento
+      summary: Lista os agendamentos da doadora autenticada
+      responses:
+        '200':
+          description: Successful operation
+        '401':
+          description: Token ausente ou inválido
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Doadora:
+      type: object
+      required:
+      - nome
+      - cpf
+      - data_nascimento
+      - email
+      - senha
+      - telefone
+      properties:
+        id:
+          type: integer
+          example: 1
+        nome:
+          type: string
+          example: Maria Silva
+        cpf:
+          type: string
+          example: 123.456.789-00
+        foto:
+          type: string
+          example: https://exemplo.com/foto.jpg
+        data_nascimento:
+          type: string
+          format: date
+          example: '1995-04-20'
+        email:
+          type: string
+          example: maria@email.com
+        senha:
+          type: string
+          example: maria123
+        telefone:
+          type: string
+          example: '11949491088'
+        cep:
+          type: string
+          example: 92330-036
+        estado:
+          type: string
+          example: SP
+        cidade:
+          type: string
+          example: Itapevi
+        endereco:
+          type: string
+          example: Av.Castelo Branco
+        numero:
+          type: integer
+          example: 11
+        complemento:
+          type: string
+          example: 9A
+    Funcionario:
+      type: object
+      required:
+      - nome
+      - cpf
+      - email
+      - senha
+      - admin
+      properties:
+        id:
+          type: integer
+          example: 1
+        nome:
+          type: string
+          example: Carlos Souza
+        cpf:
+          type: string
+          example: 987.654.321-00
+        data_nascimento:
+          type: string
+          format: date
+          example: '1990-01-15'
+        email:
+          type: string
+          example: carlos@email.com
+        senha:
+          type: string
+          example: carlos123
+        admin:
+          type: boolean
+          example: false
+        id_instituicao:
+          type: integer
+          example: 1 
+    TipoColeta:
+      type: object
+      required:
+      - tipo
+      properties:
+        id:
+          type: integer
+          example: 1
+        tipo:
+          type: string
+          example: Domiciliar
+    Instituicao:
+      type: object
+      required:
+      - nome
+      - email
+      - senha
+      - cnpj
+      - id_coleta
+      - horarios
+      properties:
+        id:
+          type: integer
+          example: 1
+        nome:
+          type: string
+          example: Banco de Leite Humano
+        foto:
+          type: string
+          example: https://exemplo.com/logo.jpg
+        email:
+          type: string
+          example: contato@blh.org
+        senha:
+          type: string
+          example: senha123
+        cnpj:
+          type: string
+          example: 12.345.678/0001-90
+        id_coleta:
+          type: integer
+          example: 1
+        telefone:
+          type: string
+          example: 11-99999-9999
+        cep:
+          type: string
+          example: 01310-100
+        logradouro:
+          type: string
+          example: Av.Paulista
+        numero:
+          type: string
+          example: '1000'
+        complemento:
+          type: string
+          example: Bloco B
+        bairro:
+          type: string
+          example: Bela vista
+        cidade:
+          type: string
+          example: São paulo
+        uf:
+          type: string
+          example: SP
+        horarios:
+          type: array
+          description: Dias em que a unidade funciona. Dia que não for enviado é considerado
+            fechado.
+          items:
+            $ref: '#/components/schemas/HorarioFuncionamento'
+        funcionario_responsavel:
+          type: object
+          description: Funcionário responsável pelo cadastro da instituição.
+          required:
+            - nome
+            - cpf
+            - data_nascimento
+            - email
+            - senha
+            - admin
+          properties:
+            nome:
+              type: string
+              example: Renata Vasconcellos
+            cpf:
+              type: string
+              example: 123.456.789-00
+            data_nascimento:
+              type: string
+              format: date
+              example: 1982-08-14
+            email:
+              type: string
+              format: email
+              example: renata@blh.org
+            senha:
+              type: string
+              example: Senha@123
+            admin:
+              type: boolean
+              example: true
+    HorarioFuncionamento:
+      type: object
+      required:
+      - dia_semana
+      - hora_inicio
+      - hora_fim
+      properties:
+        dia_semana:
+          type: integer
+          minimum: 1
+          maximum: 7
+          description: ID do dia da semana (1 = Domingo ... 7 = Sábado), obtido em
+            GET /dia-semana
+          example: 2
+        hora_inicio:
+          type: string
+          description: Horário de abertura em formato 24h
+          example: 08:00
+        hora_fim:
+          type: string
+          description: Horário de fechamento em formato 24h
+          example: '17:00'
+    Campanha:
+      type: object
+      required:
+      - titulo
+      - desc
+      - data_inicio
+      - data_fim
+      - is_ativo
+      - id_instituicao
+      - tbl_funcionario_id
+      properties:
+        id:
+          type: integer
+          example: 1
+        titulo:
+          type: string
+          example: Agosto Dourado
+        desc:
+          type: string
+          example: Campanha de incentivo à doação de leite materno
+        foto:
+          type: string
+          example: https://exemplo.com/campanha.jpg
+        data_inicio:
+          type: string
+          format: date
+          example: '2026-08-01'
+        data_fim:
+          type: string
+          format: date
+          example: '2026-08-31'
+        is_ativo:
+          type: boolean
+          example: true
+        id_instituicao:
+          type: integer
+          example: 1
+        tbl_funcionario_id:
+          type: integer
+          example: 1
+    Jornada:
+      type: object
+      required:
+      - is_ativo
+      - nome
+      - desc
+      - tbl_instituicao_id
+      - etapas
+      properties:
+        id:
+          type: integer
+          example: 1
+        is_ativo:
+          type: boolean
+          example: true
+        nome:
+          type: string
+          example: Jornada padrão da doadora
+        desc:
+          type: string
+          example: Acompanha a doadora desde a orientação até a coleta
+        tbl_instituicao_id:
+          type: integer
+          example: 1
+        etapas:
+          type: array
+          items:
+            type: object
+            required:
+            - titulo
+            - descricao
+            - is_agendavel
+            - is_obrigatorio
+            - solicita_arquivo
+            - precisa_aprovacao
+            - numero_ciclos
+            properties:
+              titulo:
+                type: string
+                example: Conheça a doação
+              descricao:
+                type: string
+                example: Material introdutório.
+              is_agendavel:
+                type: boolean
+                example: false
+              is_obrigatorio:
+                type: boolean
+                example: false
+              solicita_arquivo:
+                type: boolean
+                example: false
+              precisa_aprovacao:
+                type: boolean
+                example: false
+              material_institucional:
+                type: string
+                example: https://exemplo.com/Guia_Instrucoes_Coleta_Materna_v2.pdf
+              numero_ciclos:
+                type: integer
+                example: 1
+    Etapa:
+      type: object
+      required:
+      - titulo
+      - descricao
+      - is_agendavel
+      - is_obrigatorio
+      - solicita_arquivo
+      - precisa_aprovacao
+      - tbl_jornada_id
+      properties:
+        id:
+          type: integer
+          example: 1
+        titulo:
+          type: string
+          example: Envio de documentos
+        descricao:
+          type: string
+          example: Envie os documentos solicitados
+        is_agendavel:
+          type: boolean
+          example: false
+        is_obrigatorio:
+          type: boolean
+          example: true
+        solicita_arquivo:
+          type: boolean
+          example: true
+        precisa_aprovacao:
+          type: boolean
+          example: true
+        material_institucional:
+          type: string
+          example: https://exemplo.com/material.pdf
+        tbl_jornada_id:
+          type: integer
+          example: 1
+    Ciclo:
+      type: object
+      required:
+      - numero_ciclos
+      - is_concluido
+      - tbl_jornada_id
+      - tbl_doadora_id
+      properties:
+        id:
+          type: integer
+          example: 1
+        numero_ciclos:
+          type: integer
+          example: 1
+        is_concluido:
+          type: string
+          example: Não
+        tbl_jornada_id:
+          type: integer
+          example: 1
+        tbl_doadora_id:
+          type: integer
+          example: 1
+    EtapaCiclo:
+      type: object
+      required:
+      - etapa_id
+      - tbl_ciclo_id
+      properties:
+        id:
+          type: integer
+          example: 1
+        data_conclusao:
+          type: string
+          example: '2026-09-29'
+        etapa_id:
+          type: integer
+          example: 1
+        tbl_ciclo_id:
+          type: integer
+          example: 1
+    CadastroHorario:
+      type: object
+      required:
+      - dia
+      - horario
+      - tbl_etapa_id
+      properties:
+        id:
+          type: integer
+          example: 1
+        dia:
+          type: string
+          format: date
+          example: '2026-08-25'
+        horario:
+          type: string
+          format: time
+          example: '14:30:00'
+        tbl_etapa_id:
+          type: integer
+          example: 2
+          description: ID da etapa agendável da jornada
+    HorarioCadastradoAgenda:
+      type: object
+      properties:
+        id_horario:
+          type: integer
+          example: 1
+        dia:
+          type: string
+          format: date
+          example: '2026-08-25'
+        horario:
+          type: string
+          format: time
+          example: 09:00:00
+        etapa:
+          type: object
+          properties:
+            id:
+              type: integer
+              example: 2
+            titulo:
+              type: string
+              example: Coleta
+        agendamentos:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+                example: 10
+              doadora:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    example: 1
+                  nome:
+                    type: string
+                    example: Ana Souza
+              status:
+                type: string
+                example: Confirmado
+        total_agendamentos:
+          type: integer
+          example: 2
+    ResumoAgenda:
+      type: object
+      properties:
+        horarios_na_semana:
+          type: integer
+          example: 38
+    Dashboard:
+      type: object
+      properties:
+        resumo:
+          type: object
+          properties:
+            agendamentos_hoje:
+              type: integer
+              example: 4
+            confirmados:
+              type: integer
+              example: 3
+            pendentes:
+              type: integer
+              example: 1
+            cancelados:
+              type: integer
+              example: 1
+        agendamentos_semana:
+          type: array
+          items:
+            type: object
+            properties:
+              dia:
+                type: string
+                example: Seg
+              quantidade:
+                type: integer
+                example: 3
+        doadoras_em_jornada:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+                example: 1
+              nome:
+                type: string
+                example: Maria Silva
+              progresso:
+                type: integer
+                example: 80
+        agenda_hoje:
+          type: array
+          items:
+            type: object
+            properties:
+              id_agendamento:
+                type: integer
+                example: 10
+              horario:
+                type: string
+                example: '10:00:00'
+              doadora:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    example: 2
+                  nome:
+                    type: string
+                    example: Maria Silva
+              etapa:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    example: 2
+                  titulo:
+                    type: string
+                    example: Coleta
+              status:
+                type: string
+                example: Confirmado
+    StatusAgendamento:
+      type: object
+      required:
+      - status
+      properties:
+        id:
+          type: integer
+          example: 1
+        status:
+          type: string
+          enum: [Pendente, Aceito, Recusado, Cancelado]
+          example: Pendente
+    Agendamento:
+      type: object
+      required:
+      - id_cadastro_horario
+      - id_jornada_doacao
+      - id_status_agendamento
+      properties:
+        id_cadastro_horario:
+          type: integer
+          minimum: 1
+          description: ID de um horário cadastrado e disponível
+          example: 3
+        id_jornada_doacao:
+          type: integer
+          minimum: 1
+          description: ID do vínculo da doadora com a etapa da jornada
+          example: 5
+        id_status_agendamento:
+          type: integer
+          minimum: 1
+          description: Use 1 (Pendente) para solicitar um novo agendamento
+          example: 1
+    AtendimentoAgenda:
+      type: object
+      required:
+      - id_agendamento
+      - data_agendamento
+      - horario
+      - nome_doadora
+      - tipo_atendimento
+      - status_agendamento
+      properties:
+        id_agendamento:
+          type: integer
+          example: 10
+        data_agendamento:
+          type: string
+          format: date
+          example: '2026-11-10'
+        horario:
+          type: string
+          format: time
+          example: '09:00:00'
+        nome_doadora:
+          type: string
+          example: Ana Souza
+        tipo_atendimento:
+          type: string
+          example: Coleta
+        status_agendamento:
+          type: string
+          enum: [Pendente, Aceito, Recusado, Cancelado]
+          example: Pendente
+        id_instituicao:
+          type: integer
+          example: 1
+        nome_instituicao:
+          type: string
+          example: Banco de Leite Humano
+        logradouro:
+          type: string
+          example: Rua das Flores
+        numero:
+          type: string
+          example: '123'
+        complemento:
+          type: string
+          nullable: true
+          example: Sala 2
+        bairro:
+          type: string
+          example: Centro
+        cep:
+          type: string
+          example: '12345-678'
+        cidade:
+          type: string
+          example: São Paulo
+        sigla_estado:
+          type: string
+          example: SP
+        latitude:
+          type: number
+          format: double
+          nullable: true
+          example: -23.5505
+        longitude:
+          type: number
+          format: double
+          nullable: true
+          example: -46.6333
+        telefone_instituicao:
+          type: string
+          nullable: true
+          example: '+5511999999999'
+    AgendamentosResponse:
+      type: object
+      properties:
+        api_description:
+          type: string
+          example: API para controlar o projeto Materna
+        development:
+          type: string
+          example: Bruno Haddad Alves
+        version:
+          type: string
+          example: 1.0.4.26
+        status:
+          type: boolean
+          example: true
+        status_code:
+          type: integer
+          example: 200
+        count:
+          type: integer
+          example: 1
+        response:
+          type: object
+          properties:
+            agendamento:
+              type: array
+              items:
+                $ref: '#/components/schemas/AtendimentoAgenda'
+    DocumentoInstituicao:
+      type: object
+      required:
+      - documento
+      - etapa_id
+      properties:
+        id:
+          type: integer
+          example: 1
+        documento:
+          type: string
+          example: https://exemplo.com/doc.pdf
+        etapa_id:
+          type: integer
+          example: 1
+    DocumentoDoadora:
+      type: object
+      required:
+      - documento
+      - id_doadora
+      - id_jornada_doacao
+      properties:
+        id_documento:
+          type: integer
+          example: 1
+        documento:
+          type: string
+          example: https://exemplo.com/doc.pdf
+        motivo_recusa:
+          type: string
+          example: Documento ilegível
+        id_jornada_doacao:
+          type: integer
+          example: 1
+        id_doadora:
+          type: integer
+          example: 1
+        id_etapa:
+          type: integer
+          example: 2
+        etapa:
+          type: string
+          example: Envio de documentos
+    DoacaoRealizada:
+      type: object
+      properties:
+        id_ciclo:
+          type: integer
+          example: 4
+        numero_ciclo:
+          type: integer
+          example: 4
+        data_conclusao:
+          type: string
+          format: date
+          example: '2026-08-25'
+        instituicao:
+          type: object
+          properties:
+            id:
+              type: integer
+              example: 1
+            nome:
+              type: string
+              example: Banco de Leite Humano
