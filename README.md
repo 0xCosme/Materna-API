@@ -4,6 +4,5 @@ API REST do projeto Materna para gerenciamento de doações de leite materno, de
 
 ### antes de tudo execute
 
-'''
-npm install
-'''
+docker compose up -d --build
+http://localhost/campanha

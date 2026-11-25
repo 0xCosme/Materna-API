@@ -101,7 +101,7 @@ create table tbl_instituicao(
     nome 		        varchar (100)           not null,
     cnpj 		        varchar (30)            not null,
     email            	varchar(255)            not null,
-    foto                varchar(255)            not null,
+    foto                varchar(255),
 
     id_coleta           int                     not null,
     id_endereco         int                     not null,
