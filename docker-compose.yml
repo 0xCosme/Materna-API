@@ -42,6 +42,26 @@ services:
       - backend
     networks:
       - materna-net
+  
+  envio-email:
+    build: ./service/envio-email
+    container_name: envio-email-materna
+    restart: unless-stopped
+    env_file:
+      - ./service/envio-email/.env
+    environment:
+      BANCO_HOST: database      # nome do serviço na rede interna
+      BANCO_PORTA: "3306"       # porta interna (não a 3307 do host)
+      BANCO_USUARIO: root
+      BANCO_SENHA: "12345678"
+      BANCO_NOME: db_tech_bridge_materna
+    depends_on:
+      database:
+        condition: service_healthy
+    networks:
+      - materna-net
+
+
 
 volumes:
   mysql_data:
